@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+'use client';
+
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Building2, House, Palmtree, CalendarOff, Moon, CircleDashed, Info } from 'lucide-react';
-import { STATUS, TEAM_COLORS, weekdayName } from '../lib/schedule';
+import { STATUS, TEAM_COLORS, formatDate, toZonedKey, weekdayName } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
 
 export const STATUS_ICONS = {
@@ -24,6 +26,16 @@ export const secondaryButton =
 
 export const dangerButton =
   'py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 border border-rose-500/20';
+
+const subscribeNoop = () => () => {};
+
+// Server and browser ICU data format dates differently (e.g. Turkish "Eki" vs "Ekim"),
+// so date-heavy views render only after hydration.
+export function ClientOnly({ children }) {
+  const { t } = useI18n();
+  const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  return hydrated ? children : <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-12">{t('app.loading')}</p>;
+}
 
 export function InfoTip({ text, label }) {
   const { t } = useI18n();
@@ -137,6 +149,15 @@ export function StatusBadge({ status, className = '' }) {
 export function TeamDot({ team, className = 'w-2.5 h-2.5' }) {
   const c = TEAM_COLORS[team?.color] || TEAM_COLORS.neutral;
   return <span className={`inline-block rounded-full ring-1 ring-black/10 dark:ring-white/10 ${c.dot} ${className}`} />;
+}
+
+export function PlanFooter({ updatedAt }) {
+  const { t } = useI18n();
+  return (
+    <footer className="text-center text-[11px] text-neutral-500 dark:text-neutral-400 px-4">
+      {t('app.updated', { date: formatDate(toZonedKey(new Date(updatedAt)), { day: 'numeric', month: 'long', year: 'numeric' }) })}
+    </footer>
+  );
 }
 
 export function TeamBadge({ team }) {

@@ -1,13 +1,18 @@
-import { useRef, useState } from 'react';
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
 import {
   CalendarCog,
   CalendarDays,
   CloudUpload,
   Copy,
   Download,
+  History,
+  LogOut,
   Palmtree,
   Pencil,
   Plus,
+  RefreshCw,
   Repeat,
   RotateCcw,
   Trash2,
@@ -25,6 +30,7 @@ import {
   formatDate,
   formatRange,
   getDayStatus,
+  getLocale,
   isoWeekday,
   normalizePlan,
   parseKey,
@@ -34,6 +40,7 @@ import {
   weekdayName,
 } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
+import { api } from '../lib/api';
 import {
   Card,
   DayToggles,
@@ -63,23 +70,20 @@ function formatDayList(days, noneLabel = '') {
 
 /* ---------------------------- Publish ---------------------------- */
 
-function PublishCard({ plan, isDraft, onImport, onDiscard, onPublish }) {
+function PublishCard({ plan, isDraft, username, onImport, onDiscard, onPublish, onLogout }) {
   const { t } = useI18n();
   const fileRef = useRef(null);
   const [message, setMessage] = useState(null);
-  const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const publish = async (e) => {
-    e.preventDefault();
+  const publish = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      await onPublish(password);
+      await onPublish();
       setMessage({ ok: true, text: t('publish.saved') });
     } catch (err) {
-      if (err.status === 401) setPassword('');
-      setMessage({ ok: false, text: t(err.status === 401 ? 'publish.unauthorized' : 'publish.saveFailed', { error: err.message }) });
+      setMessage({ ok: false, text: err.status === 401 ? t('publish.sessionExpired') : t('publish.saveFailed', { error: err.message }) });
     } finally {
       setSaving(false);
     }
@@ -127,20 +131,9 @@ function PublishCard({ plan, isDraft, onImport, onDiscard, onPublish }) {
       }
     >
       <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('publish.text')}</p>
-      <form onSubmit={publish} className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="password"
-          className={`${inputClass} sm:flex-1`}
-          value={password}
-          autoComplete="current-password"
-          placeholder={t('publish.password')}
-          aria-label={t('publish.password')}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit" disabled={!password || saving} className={`${primaryButton} disabled:opacity-40 disabled:pointer-events-none`}>
-          <CloudUpload className="w-4 h-4" /> {saving ? t('publish.saving') : t('publish.toDb')}
-        </button>
-      </form>
+      <button type="button" onClick={publish} disabled={saving} className={`${primaryButton} w-full`}>
+        <CloudUpload className="w-4 h-4" /> {saving ? t('publish.saving') : t('publish.toDb')}
+      </button>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button type="button" onClick={exportPlan} className={`${secondaryButton} py-3`}>
           <Download className="w-4 h-4" /> {t('publish.export')}
@@ -173,6 +166,80 @@ function PublishCard({ plan, isDraft, onImport, onDiscard, onPublish }) {
           {message.text}
         </p>
       )}
+      <div className="flex items-center justify-between gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800/80">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{t('publish.signedInAs', { name: username })}</p>
+        <button type="button" onClick={onLogout} className={secondaryButton}>
+          <LogOut className="w-3.5 h-3.5" /> {t('publish.logout')}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/* ---------------------------- History ---------------------------- */
+
+function HistoryCard({ refreshKey, onLoad }) {
+  const { t } = useI18n();
+  const [versions, setVersions] = useState(null);
+  const [error, setError] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const refresh = async () => {
+    setError(null);
+    try {
+      setVersions(await api('/api/plan/versions'));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, [refreshKey]);
+
+  const load = async (id) => {
+    if (!window.confirm(t('history.loadConfirm'))) return;
+    try {
+      onLoad(await api(`/api/plan/versions/${id}`));
+      setLoaded(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <Card
+      icon={History}
+      title={t('history.title')}
+      hint={t('history.hint')}
+      actions={
+        <button type="button" className={secondaryButton} aria-label={t('history.refresh')} onClick={refresh}>
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+      }
+    >
+      {error && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{t('history.failed', { error })}</p>}
+      {!versions && !error && <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('app.loading')}</p>}
+      <ul className="space-y-2 max-h-80 overflow-y-auto">
+        {versions?.map((v, i) => (
+          <li key={v.id} className={listItem}>
+            <div className="min-w-0">
+              <p className="font-outfit font-bold text-sm truncate">
+                {new Date(v.createdAt).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' })}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {t('history.by', { name: v.createdBy || '—' })}
+                {i === 0 ? ` · ${t('history.current')}` : ''}
+              </p>
+            </div>
+            <button type="button" disabled={i === 0} className={`${secondaryButton} disabled:opacity-40 disabled:pointer-events-none`} onClick={() => load(v.id)}>
+              <RotateCcw className="w-3.5 h-3.5" /> {t('history.load')}
+            </button>
+          </li>
+        ))}
+        {versions && !versions.length && <li className="text-sm text-neutral-500 dark:text-neutral-400">{t('history.empty')}</li>}
+      </ul>
+      {loaded && <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{t('history.loaded')}</p>}
     </Card>
   );
 }
@@ -223,10 +290,14 @@ function TeamsCard({ plan, updatePlan }) {
 /* --------------------------- Rotations --------------------------- */
 
 const PRESETS = [
-  { label: 'Mon–Wed / Wed–Fri', firstHalf: [1, 2, 3], secondHalf: [3, 4, 5], alternate: true },
-  { label: 'Mon–Tue / Thu–Fri', firstHalf: [1, 2], secondHalf: [4, 5], alternate: true },
-  { label: 'Full weeks', firstHalf: [1, 2, 3, 4, 5], secondHalf: [], alternate: true },
+  { id: 'split3', firstHalf: [1, 2, 3], secondHalf: [3, 4, 5], alternate: true },
+  { id: 'split2', firstHalf: [1, 2], secondHalf: [4, 5], alternate: true },
+  { id: 'full', firstHalf: [1, 2, 3, 4, 5], secondHalf: [], alternate: true },
 ];
+
+function presetLabel(p, t) {
+  return p.id === 'full' ? t('rot.fullWeeks') : `${formatDayList(p.firstHalf)} / ${formatDayList(p.secondHalf)}`;
+}
 
 function emptyRotation(plan) {
   const start = todayKey();
@@ -244,9 +315,10 @@ function emptyRotation(plan) {
 }
 
 function RotationSummary({ rotation, plan, limit }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const runs = summarizeRotation(rotation, plan.teams);
-  const teamName = (id) => plan.teams.find((t) => t.id === id)?.name;
+  const teamName = (id) => plan.teams.find((tm) => tm.id === id)?.name;
   const text = runs.map((r) => `${formatRange(r.start, r.end)}: ${teamName(r.teamId)}`).join('\n');
 
   const copy = async () => {
@@ -255,27 +327,27 @@ function RotationSummary({ rotation, plan, limit }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      window.prompt('Copy the schedule:', text);
+      window.prompt(t('rot.copyPrompt'), text);
     }
   };
 
-  if (!runs.length) return <p className="text-xs text-neutral-500 dark:text-neutral-400">No office days in this range.</p>;
+  if (!runs.length) return <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('rot.noOffice')}</p>;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">Preview</p>
-          <InfoTip text="Office periods this rotation creates. Holidays and manual day changes aren't included. 'Copy as text' copies the full list in the same format as the manager's email." />
+          <p className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">{t('rot.preview')}</p>
+          <InfoTip text={t('rot.previewTip')} />
         </div>
         <button type="button" onClick={copy} className={secondaryButton}>
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? 'Copied' : 'Copy as text'}
+          {copied ? t('rot.copied') : t('rot.copy')}
         </button>
       </div>
       <ul className="space-y-1">
         {runs.slice(0, limit).map((r) => {
-          const team = plan.teams.find((t) => t.id === r.teamId);
+          const team = plan.teams.find((tm) => tm.id === r.teamId);
           return (
             <li key={`${r.start}-${r.teamId}`} className="flex items-center justify-between gap-2 text-sm">
               <span className="font-medium text-neutral-700 dark:text-neutral-300">{formatRange(r.start, r.end)}</span>
@@ -285,66 +357,61 @@ function RotationSummary({ rotation, plan, limit }) {
         })}
       </ul>
       {runs.length > limit && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">…and {runs.length - limit} more periods. Use "Copy as text" for the full list.</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('rot.more', { n: runs.length - limit })}</p>
       )}
     </div>
   );
 }
 
 function RotationForm({ plan, initial, onSave, onCancel }) {
+  const { t } = useI18n();
   const [form, setForm] = useState(initial);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const valid = Boolean(form.start && form.end && form.start <= form.end && (form.firstHalf.length || form.secondHalf.length));
 
   return (
     <div className="space-y-4 p-4 rounded-xl border bg-neutral-100/80 border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-800 animate-fade-in">
-      <Field label="Name" hint="Only shown in the admin list to help you tell rotations apart. If you leave it empty, a name is made from the start date.">
-        <input className={inputClass} value={form.name} maxLength={80} placeholder="e.g. Q4 rotation" onChange={(e) => set({ name: e.target.value })} />
+      <Field label={t('rot.name')} hint={t('rot.nameHint')}>
+        <input className={inputClass} value={form.name} maxLength={80} placeholder={t('rot.namePlaceholder')} onChange={(e) => set({ name: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Start" hint="First day of the rotation. Weeks are counted from the week this date falls in, so it can be any weekday (e.g. Thursday, October 1).">
+        <Field label={t('rot.start')} hint={t('rot.startHint')}>
           <input type="date" className={inputClass} value={form.start} onChange={(e) => set({ start: e.target.value })} />
         </Field>
-        <Field label="End" hint="Last day of the rotation. Days after it use another rotation, or show 'Not planned' if none covers them.">
+        <Field label={t('rot.end')} hint={t('rot.endHint')}>
           <input type="date" className={inputClass} value={form.end} onChange={(e) => set({ end: e.target.value })} />
         </Field>
       </div>
 
       <Field
-        label="Quick pattern"
-        hint={
-          <>
-            Fills in the weekdays below. You can still change them afterwards.
-            <br />• <b>Mon–Wed / Wed–Fri</b>: split week, both teams in on Wednesday.
-            <br />• <b>Mon–Tue / Thu–Fri</b>: split week, nobody in on Wednesday.
-            <br />• <b>Full weeks</b>: one team comes in all week, then the teams swap.
-          </>
-        }
+        label={t('rot.quick')}
+        hint={t('rot.quickHint', {
+          split3: presetLabel(PRESETS[0], t),
+          split2: presetLabel(PRESETS[1], t),
+          full: presetLabel(PRESETS[2], t),
+        })}
       >
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
-            <button key={p.label} type="button" className={secondaryButton} onClick={() => set({ firstHalf: p.firstHalf, secondHalf: p.secondHalf, alternate: p.alternate })}>
-              <Wand2 className="w-3.5 h-3.5" /> {p.label}
+            <button key={p.id} type="button" className={secondaryButton} onClick={() => set({ firstHalf: p.firstHalf, secondHalf: p.secondHalf, alternate: p.alternate })}>
+              <Wand2 className="w-3.5 h-3.5" /> {presetLabel(p, t)}
             </button>
           ))}
         </div>
       </Field>
 
-      <Field
-        label="Team in office on the start date"
-        hint="The team that works on the first day. If the start date falls in the second half of the week (e.g. Thursday), this team takes the second half of that week and the first half of the next week."
-      >
+      <Field label={t('rot.startTeam')} hint={t('rot.startTeamHint')}>
         <Segmented
-          options={plan.teams.map((t) => ({ value: t.id, label: t.name, icon: <TeamDot team={t} /> }))}
+          options={plan.teams.map((tm) => ({ value: tm.id, label: tm.name, icon: <TeamDot team={tm} /> }))}
           value={form.startTeamId}
           onChange={(v) => set({ startTeamId: v })}
         />
       </Field>
 
-      <Field label="First half of the week (leading team)" hint="Office days for the team that leads the week. With weekly swap on, this is the team that also worked at the end of the previous week.">
+      <Field label={t('rot.firstHalf')} hint={t('rot.firstHalfHint')}>
         <DayToggles days={WEEKDAYS} value={form.firstHalf} onChange={(v) => set({ firstHalf: v })} />
       </Field>
-      <Field label="Second half of the week (other team)" hint="Office days for the other team. A day selected in both halves is an overlap day, when both teams are in the office.">
+      <Field label={t('rot.secondHalf')} hint={t('rot.secondHalfHint')}>
         <DayToggles days={WEEKDAYS} value={form.secondHalf} onChange={(v) => set({ secondHalf: v })} />
       </Field>
 
@@ -352,15 +419,15 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" className="mt-0.5 w-4 h-4 accent-neutral-900 dark:accent-neutral-100" checked={form.alternate} onChange={(e) => set({ alternate: e.target.checked })} />
           <span className="text-sm text-neutral-700 dark:text-neutral-300">
-            <b>Swap teams every week</b> — the team that finished a week starts the next one.
+            <b>{t('rot.swap')}</b> — {t('rot.swapDesc')}
           </span>
         </label>
-        <InfoTip text="On: the teams switch halves every week (Red Mon–Wed, then White Mon–Wed the next week, and so on). Off: each team keeps the same days every week." />
+        <InfoTip text={t('rot.swapTip')} />
       </div>
 
       {form.firstHalf.some((d) => form.secondHalf.includes(d)) && (
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Overlap day: {formatDayList(form.firstHalf.filter((d) => form.secondHalf.includes(d)))} — both teams in office.
+          {t('rot.overlap', { days: formatDayList(form.firstHalf.filter((d) => form.secondHalf.includes(d))) })}
         </p>
       )}
 
@@ -369,21 +436,22 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
       )}
 
       <div className="flex gap-2">
-        <button type="button" disabled={!valid} className={`${primaryButton} flex-1`} onClick={() => onSave({ ...form, id: form.id || uid(), name: form.name.trim() || `Rotation from ${formatDate(form.start)}` })}>
-          <Check className="w-4 h-4" /> Save rotation
+        <button type="button" disabled={!valid} className={`${primaryButton} flex-1`} onClick={() => onSave({ ...form, id: form.id || uid(), name: form.name.trim() || t('rot.defaultName', { date: formatDate(form.start) }) })}>
+          <Check className="w-4 h-4" /> {t('rot.save')}
         </button>
         <button type="button" className={`${secondaryButton} px-4`} onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
       {!valid && (
-        <p className="text-xs text-rose-600 dark:text-rose-400">Pick a valid date range and at least one office day.</p>
+        <p className="text-xs text-rose-600 dark:text-rose-400">{t('rot.invalid')}</p>
       )}
     </div>
   );
 }
 
 function RotationsCard({ plan, updatePlan }) {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(null);
 
   const save = (rotation) => {
@@ -395,47 +463,45 @@ function RotationsCard({ plan, updatePlan }) {
   };
 
   const remove = (id) =>
-    window.confirm('Delete this rotation?') && updatePlan((p) => ({ ...p, rotations: p.rotations.filter((r) => r.id !== id) }));
+    window.confirm(t('rot.deleteConfirm')) && updatePlan((p) => ({ ...p, rotations: p.rotations.filter((r) => r.id !== id) }));
 
   return (
     <Card
       icon={Repeat}
-      title="Recurring rotations"
-      hint="Create a weekly office pattern once and it repeats until the end date. Use the pencil to edit or the bin to delete a rotation. Holidays and manual day changes always take priority."
+      title={t('rot.title')}
+      hint={t('rot.hint')}
       actions={
         !editing && (
           <button type="button" className={secondaryButton} onClick={() => setEditing(emptyRotation(plan))}>
-            <Plus className="w-3.5 h-3.5" /> New
+            <Plus className="w-3.5 h-3.5" /> {t('rot.new')}
           </button>
         )
       }
     >
-      <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        A rotation repeats a weekly office pattern between two dates. If rotations overlap, the one lower in the list wins.
-      </p>
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('rot.desc')}</p>
 
       {editing && <RotationForm key={editing.id || 'new'} plan={plan} initial={editing} onSave={save} onCancel={() => setEditing(null)} />}
 
       <ul className="space-y-2">
         {plan.rotations.map((r) => {
-          const startTeam = plan.teams.find((t) => t.id === r.startTeamId);
+          const startTeam = plan.teams.find((tm) => tm.id === r.startTeamId);
           return (
             <li key={r.id} className={listItem}>
               <div className="min-w-0 space-y-1">
                 <p className="font-outfit font-bold text-sm truncate">{r.name}</p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {formatDate(r.start)} → {formatDate(r.end)} · {formatDayList(r.firstHalf)} / {formatDayList(r.secondHalf)}
-                  {r.alternate ? ' · weekly swap' : ''}
+                  {formatDate(r.start)} → {formatDate(r.end)} · {formatDayList(r.firstHalf, t('common.none'))} / {formatDayList(r.secondHalf, t('common.none'))}
+                  {r.alternate ? ` · ${t('rot.weeklySwap')}` : ''}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-                  Starts with <TeamBadge team={startTeam} />
+                  {t('rot.startsWith')} <TeamBadge team={startTeam} />
                 </p>
               </div>
               <div className="flex gap-1.5 shrink-0">
-                <button type="button" className={secondaryButton} aria-label="Edit" onClick={() => setEditing(r)}>
+                <button type="button" className={secondaryButton} aria-label={t('common.edit')} onClick={() => setEditing(r)}>
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
-                <button type="button" className={dangerButton} aria-label="Delete" onClick={() => remove(r.id)}>
+                <button type="button" className={dangerButton} aria-label={t('common.delete')} onClick={() => remove(r.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -443,7 +509,7 @@ function RotationsCard({ plan, updatePlan }) {
           );
         })}
         {!plan.rotations.length && !editing && (
-          <li className="text-sm text-neutral-500 dark:text-neutral-400">No rotations yet. Tap "New" to create one.</li>
+          <li className="text-sm text-neutral-500 dark:text-neutral-400">{t('rot.empty')}</li>
         )}
       </ul>
     </Card>
@@ -453,6 +519,7 @@ function RotationsCard({ plan, updatePlan }) {
 /* ---------------------------- Holidays ---------------------------- */
 
 function HolidaysCard({ plan, updatePlan }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', start: '', end: '' });
   const valid = form.name.trim() && form.start && (!form.end || form.end >= form.start);
 
@@ -467,21 +534,21 @@ function HolidaysCard({ plan, updatePlan }) {
   const remove = (id) => updatePlan((p) => ({ ...p, holidays: p.holidays.filter((h) => h.id !== id) }));
 
   return (
-    <Card icon={Palmtree} title="Holidays" hint="Holidays apply to both teams and replace the rotation on those days. To give only one team a day off, use Calendar → 'Off' instead.">
+    <Card icon={Palmtree} title={t('hol.title')} hint={t('hol.hint')}>
       <form onSubmit={add} className="space-y-3">
-        <Field label="Holiday name" hint="Shown to users on the day, e.g. 'Republic Day' or 'New Year'.">
-          <input className={inputClass} value={form.name} maxLength={80} placeholder="e.g. Republic Day" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Field label={t('hol.name')} hint={t('hol.nameHint')}>
+          <input className={inputClass} value={form.name} maxLength={80} placeholder={t('hol.namePlaceholder')} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="From" hint="First day of the holiday.">
+          <Field label={t('hol.from')} hint={t('hol.fromHint')}>
             <input type="date" className={inputClass} value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
           </Field>
-          <Field label="To (optional)" hint="Leave empty for a one-day holiday. Set it to mark several days in a row, e.g. a long holiday or bridge days.">
+          <Field label={t('hol.to')} hint={t('hol.toHint')}>
             <input type="date" className={inputClass} value={form.end} min={form.start} onChange={(e) => setForm({ ...form, end: e.target.value })} />
           </Field>
         </div>
         <button type="submit" disabled={!valid} className={`${primaryButton} w-full`}>
-          <Plus className="w-4 h-4" /> Add holiday
+          <Plus className="w-4 h-4" /> {t('hol.add')}
         </button>
       </form>
 
@@ -494,12 +561,12 @@ function HolidaysCard({ plan, updatePlan }) {
                 {h.start === h.end ? formatDate(h.start) : `${formatDate(h.start)} → ${formatDate(h.end)}`}
               </p>
             </div>
-            <button type="button" className={dangerButton} aria-label="Delete" onClick={() => remove(h.id)}>
+            <button type="button" className={dangerButton} aria-label={t('common.delete')} onClick={() => remove(h.id)}>
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </li>
         ))}
-        {!plan.holidays.length && <li className="text-sm text-neutral-500 dark:text-neutral-400">No holidays added.</li>}
+        {!plan.holidays.length && <li className="text-sm text-neutral-500 dark:text-neutral-400">{t('hol.empty')}</li>}
       </ul>
     </Card>
   );
@@ -507,12 +574,7 @@ function HolidaysCard({ plan, updatePlan }) {
 
 /* ---------------------------- Calendar ---------------------------- */
 
-const BULK_STATUS = [
-  { value: 'office', label: 'Office' },
-  { value: 'home', label: 'Home' },
-  { value: 'off', label: 'Off' },
-  { value: 'auto', label: 'Auto' },
-];
+const BULK_STATUS = ['office', 'home', 'off', 'auto'];
 
 function applyOverrides(overrides, dates, teamIds, value) {
   const next = { ...overrides };
@@ -529,8 +591,9 @@ function applyOverrides(overrides, dates, teamIds, value) {
 }
 
 function CalendarCard({ plan, updatePlan }) {
+  const { t } = useI18n();
   const [month, setMonth] = useState(() => {
-    const d = new Date();
+    const d = parseKey(todayKey());
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selected, setSelected] = useState(null);
@@ -549,17 +612,17 @@ function CalendarCard({ plan, updatePlan }) {
     for (let k = bulk.start; k <= bulk.end; k = addDays(k, 1)) {
       if (!bulk.weekdaysOnly || isoWeekday(k) <= 5) dates.push(k);
     }
-    const teamIds = bulk.team === 'all' ? plan.teams.map((t) => t.id) : [bulk.team];
+    const teamIds = bulk.team === 'all' ? plan.teams.map((tm) => tm.id) : [bulk.team];
     updatePlan((p) => ({ ...p, overrides: applyOverrides(p.overrides, dates, teamIds, bulk.status) }));
-    setBulkMsg(`Updated ${dates.length} day${dates.length === 1 ? '' : 's'}.`);
+    setBulkMsg(dates.length === 1 ? t('calc.updatedOne') : t('calc.updated', { n: dates.length }));
   };
 
   const overrideKeys = Object.keys(plan.overrides).sort();
   const clearAll = () =>
-    window.confirm('Remove all manual day changes?') && updatePlan((p) => ({ ...p, overrides: {} }));
+    window.confirm(t('calc.clearConfirm')) && updatePlan((p) => ({ ...p, overrides: {} }));
 
   const cellClass = (k) => {
-    const statuses = plan.teams.map((t) => getDayStatus(plan, k, t.id).status);
+    const statuses = plan.teams.map((tm) => getDayStatus(plan, k, tm.id).status);
     if (statuses.every((s) => s === 'holiday' || s === 'off')) return STATUS.holiday.cell;
     if (statuses.every((s) => s === 'weekend')) return STATUS.weekend.cell;
     if (statuses.every((s) => s === 'none')) return STATUS.none.cell;
@@ -569,19 +632,17 @@ function CalendarCard({ plan, updatePlan }) {
   return (
     <Card
       icon={CalendarDays}
-      title="Calendar & day changes"
-      hint="Manual changes override the rotation and holidays for one team on one day. The 'Clear' button removes all manual changes and goes back to the rotation."
+      title={t('calc.title')}
+      hint={t('calc.hint')}
       actions={
         overrideKeys.length > 0 && (
           <button type="button" className={dangerButton} onClick={clearAll}>
-            <Trash2 className="w-3.5 h-3.5" /> Clear {overrideKeys.length}
+            <Trash2 className="w-3.5 h-3.5" /> {t('calc.clear', { n: overrideKeys.length })}
           </button>
         )
       }
     >
-      <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Dots show which teams are in the office. Tap a day to change it manually (e.g. sick leave, extra office day).
-      </p>
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('calc.desc')}</p>
       <MonthCalendar
         month={month}
         onMonthChange={setMonth}
@@ -590,68 +651,63 @@ function CalendarCard({ plan, updatePlan }) {
         getCellClass={cellClass}
         renderExtra={(k) => (
           <span className="flex items-center gap-0.5 h-1.5">
-            {plan.teams.map((t) =>
-              getDayStatus(plan, k, t.id).status === 'office' ? <TeamDot key={t.id} team={t} className="w-1.5 h-1.5" /> : null
+            {plan.teams.map((tm) =>
+              getDayStatus(plan, k, tm.id).status === 'office' ? <TeamDot key={tm.id} team={tm} className="w-1.5 h-1.5" /> : null
             )}
             {plan.overrides[k] && <span className="w-1 h-1 rounded-full bg-neutral-500" />}
           </span>
         )}
       />
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
-        {plan.teams.map((t) => (
-          <span key={t.id} className="inline-flex items-center gap-1.5">
-            <TeamDot team={t} className="w-2 h-2" /> {t.name} in office
+        {plan.teams.map((tm) => (
+          <span key={tm.id} className="inline-flex items-center gap-1.5">
+            <TeamDot team={tm} className="w-2 h-2" /> {t('schedule.inOffice', { team: tm.name })}
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-neutral-500" /> Manual change
+          <span className="w-1.5 h-1.5 rounded-full bg-neutral-500" /> {t('calc.manualChange')}
         </span>
         <StatusBadge status="holiday" />
       </div>
 
       <form onSubmit={applyBulk} className="space-y-3 p-4 rounded-xl border bg-neutral-100/80 border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-800">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
-          <CalendarCog className="w-4 h-4" /> Change a date range
-          <InfoTip text="Applies the same manual change to many days at once, e.g. a team offsite week or a period when everyone works from home." />
+          <CalendarCog className="w-4 h-4" /> {t('calc.range')}
+          <InfoTip text={t('calc.rangeTip')} />
         </p>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="From" hint="First day to change.">
+          <Field label={t('calc.from')} hint={t('calc.fromHint')}>
             <input type="date" className={inputClass} value={bulk.start} onChange={(e) => setBulk({ ...bulk, start: e.target.value })} />
           </Field>
-          <Field label="To" hint="Last day to change (included). The range can be up to one year.">
+          <Field label={t('calc.to')} hint={t('calc.toHint')}>
             <input type="date" className={inputClass} value={bulk.end} min={bulk.start} onChange={(e) => setBulk({ ...bulk, end: e.target.value })} />
           </Field>
         </div>
-        <Field label="Team" hint="Choose which team the change applies to, or 'Both' to change both teams.">
+        <Field label={t('calc.team')} hint={t('calc.teamHint')}>
           <Segmented
             size="sm"
-            options={[{ value: 'all', label: 'Both' }, ...plan.teams.map((t) => ({ value: t.id, label: t.name }))]}
+            options={[{ value: 'all', label: t('calc.both') }, ...plan.teams.map((tm) => ({ value: tm.id, label: tm.name }))]}
             value={bulk.team}
             onChange={(v) => setBulk({ ...bulk, team: v })}
           />
         </Field>
-        <Field
-          label="Set to"
-          hint={
-            <>
-              • <b>Office</b>: in the office, whatever the rotation says.
-              <br />• <b>Home</b>: working from home.
-              <br />• <b>Off</b>: day off for that team only (leave, team event).
-              <br />• <b>Auto</b>: removes manual changes so the rotation and holidays apply again.
-            </>
-          }
-        >
-          <Segmented size="sm" options={BULK_STATUS} value={bulk.status} onChange={(v) => setBulk({ ...bulk, status: v })} />
+        <Field label={t('calc.setTo')} hint={t('calc.setToHint')}>
+          <Segmented
+            size="sm"
+            options={BULK_STATUS.map((value) => ({ value, label: t(`override.${value}`) }))}
+            value={bulk.status}
+            onChange={(v) => setBulk({ ...bulk, status: v })}
+          />
         </Field>
         <div className="flex items-center gap-1">
           <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-neutral-900 dark:accent-neutral-100" checked={bulk.weekdaysOnly} onChange={(e) => setBulk({ ...bulk, weekdaysOnly: e.target.checked })} />
-            Weekdays only
+            {t('calc.weekdaysOnly')}
           </label>
-          <InfoTip text="When checked, Saturdays and Sundays in the range are skipped. Uncheck it to schedule weekend work." />
+          <InfoTip text={t('calc.weekdaysOnlyTip')} />
         </div>
         <button type="submit" disabled={!bulkValid} className={`${primaryButton} w-full`}>
-          <Check className="w-4 h-4" /> Apply
+          <Check className="w-4 h-4" /> {t('calc.apply')}
         </button>
         {bulkMsg && <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{bulkMsg}</p>}
       </form>
@@ -661,14 +717,10 @@ function CalendarCard({ plan, updatePlan }) {
   );
 }
 
-export default function AdminView({ plan, isDraft, updatePlan, replacePlan, discardDraft, publishPlan }) {
+export default function AdminView({ plan, isDraft, username, updatePlan, replacePlan, discardDraft, publishPlan, logout }) {
+  const { t } = useI18n();
   const [section, setSection] = useState('rotations');
-  const sections = [
-    { value: 'rotations', label: 'Rotations' },
-    { value: 'holidays', label: 'Holidays' },
-    { value: 'calendar', label: 'Calendar' },
-    { value: 'settings', label: 'Setup' },
-  ];
+  const sections = ['rotations', 'holidays', 'calendar', 'settings'].map((value) => ({ value, label: t(`admin.${value}`) }));
 
   return (
     <div className="space-y-6">
@@ -679,7 +731,16 @@ export default function AdminView({ plan, isDraft, updatePlan, replacePlan, disc
       {section === 'settings' && (
         <>
           <TeamsCard plan={plan} updatePlan={updatePlan} />
-          <PublishCard plan={plan} isDraft={isDraft} onImport={replacePlan} onDiscard={discardDraft} onPublish={publishPlan} />
+          <PublishCard
+            plan={plan}
+            isDraft={isDraft}
+            username={username}
+            onImport={replacePlan}
+            onDiscard={discardDraft}
+            onPublish={publishPlan}
+            onLogout={logout}
+          />
+          <HistoryCard refreshKey={isDraft ? 'draft' : plan.updatedAt} onLoad={replacePlan} />
         </>
       )}
       {isDraft && section !== 'settings' && (
@@ -688,7 +749,7 @@ export default function AdminView({ plan, isDraft, updatePlan, replacePlan, disc
           onClick={() => setSection('settings')}
           className={`w-full p-3 rounded-xl border text-xs font-semibold text-left ${STATUS.holiday.badge}`}
         >
-          You have unpublished changes saved on this device. Open Setup → Export plan.json to share them.
+          {t('admin.draftBanner')}
         </button>
       )}
     </div>

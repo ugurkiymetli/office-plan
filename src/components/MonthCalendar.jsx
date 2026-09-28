@@ -1,5 +1,7 @@
+'use client';
+
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { WEEKDAYS, getLocale, toKey, todayKey, weekdayName } from '../lib/schedule';
+import { WEEKDAYS, getLocale, parseKey, toKey, todayKey, weekdayName } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
 
 function buildMonthGrid(year, month) {
@@ -37,7 +39,7 @@ export default function MonthCalendar({ month, onMonthChange, getCellClass, rend
         <button
           type="button"
           onClick={() => {
-            const d = new Date();
+            const d = parseKey(todayKey());
             onMonthChange({ year: d.getFullYear(), month: d.getMonth() });
           }}
           className="font-outfit font-bold text-base text-neutral-900 dark:text-neutral-100 capitalize"

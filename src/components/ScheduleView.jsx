@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { CalendarDays, CalendarRange, Users } from 'lucide-react';
 import {
@@ -14,6 +16,7 @@ import { Card, STATUS_ICONS, Segmented, StatusBadge, TeamDot } from './ui';
 import MonthCalendar from './MonthCalendar';
 import DayDetailSheet from './DayDetailSheet';
 import { useI18n } from '../lib/i18n';
+import { PREF_COOKIES, setPrefCookie } from '../lib/prefs';
 
 const HERO_STYLE = {
   office: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300',
@@ -40,14 +43,20 @@ function nextWorkday(key) {
   return k;
 }
 
-export default function ScheduleView({ plan, teamId, onTeamChange }) {
+export default function ScheduleView({ plan, initialTeamId }) {
   const { t } = useI18n();
   const today = todayKey();
+  const [teamId, setTeamId] = useState(initialTeamId);
   const [month, setMonth] = useState(() => {
     const d = parseKey(today);
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selected, setSelected] = useState(null);
+
+  const onTeamChange = (id) => {
+    setTeamId(id);
+    setPrefCookie(PREF_COOKIES.team, id);
+  };
 
   if (!teamId || !plan.teams.some((t) => t.id === teamId)) {
     return (

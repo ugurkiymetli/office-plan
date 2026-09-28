@@ -46,8 +46,16 @@ export function parseKey(key) {
   return new Date(y, m - 1, d, 12);
 }
 
+// Fixed office time zone so server-rendered and browser-rendered "today" match.
+const TIME_ZONE = process.env.NEXT_PUBLIC_TIME_ZONE || 'Europe/Istanbul';
+const zonedKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+
+export function toZonedKey(date) {
+  return zonedKeyFormat.format(date);
+}
+
 export function todayKey() {
-  return toKey(new Date());
+  return toZonedKey(new Date());
 }
 
 export function addDays(key, n) {

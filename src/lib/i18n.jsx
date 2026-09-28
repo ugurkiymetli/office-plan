@@ -1,4 +1,8 @@
-import { createContext, useContext, useMemo } from 'react';
+'use client';
+
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { setLocale } from './schedule';
+import { PREF_COOKIES, setPrefCookie } from './prefs';
 
 export const LANGUAGES = { en: 'EN', tr: 'TR' };
 
@@ -65,19 +69,40 @@ const en = {
   'admin.holidays': 'Holidays',
   'admin.calendar': 'Calendar',
   'admin.settings': 'Setup',
-  'admin.draftBanner': 'You have unpublished changes saved on this device. Open Setup → Export plan.json to share them.',
+  'admin.draftBanner': 'You have unpublished changes saved on this device. Open Setup → Publish to share them.',
 
   'publish.title': 'Publish',
   'publish.hint': "'Local draft' means this browser has changes other people can't see yet. 'Published' means you're viewing the plan saved in the database.",
   'publish.draft': 'Local draft',
   'publish.published': 'Published',
-  'publish.text': 'Changes are saved in this browser until you publish. Enter the admin password and publish to share them with everyone.',
-  'publish.password': 'Admin password',
+  'publish.text': 'Changes are saved in this browser until you publish. Publishing makes them visible to everyone right away.',
   'publish.toDb': 'Publish',
   'publish.saving': 'Publishing…',
   'publish.saved': 'Plan published.',
-  'publish.unauthorized': 'Wrong admin password.',
+  'publish.sessionExpired': 'Your session has expired. Sign in again; your draft is kept.',
   'publish.saveFailed': 'Publish failed: {error}',
+  'publish.signedInAs': 'Signed in as {name}',
+  'publish.logout': 'Sign out',
+
+  'history.title': 'Publish history',
+  'history.hint': 'Every publish is kept here. Load an older version into your draft, check it, then press Publish to restore it.',
+  'history.refresh': 'Refresh',
+  'history.by': 'by {name}',
+  'history.current': 'current',
+  'history.load': 'Load',
+  'history.loadConfirm': 'Replace your current draft with this version?',
+  'history.loaded': 'Version loaded into your draft. Publish to restore it for everyone.',
+  'history.empty': 'Nothing published yet.',
+  'history.failed': 'Could not load history: {error}',
+
+  'login.title': 'Admin sign in',
+  'login.username': 'Username',
+  'login.password': 'Password',
+  'login.submit': 'Sign in',
+  'login.signingIn': 'Signing in…',
+  'login.invalid': 'Wrong username or password.',
+  'login.locked': 'Too many failed attempts. Try again in 15 minutes.',
+  'login.failed': 'Sign in failed: {error}',
   'publish.export': 'Export plan.json',
   'publish.import': 'Import JSON',
   'publish.discard': 'Discard draft',
@@ -240,19 +265,40 @@ const tr = {
   'admin.holidays': 'Tatiller',
   'admin.calendar': 'Takvim',
   'admin.settings': 'Ayarlar',
-  'admin.draftBanner': 'Bu cihazda yayınlanmamış değişiklikler var. Paylaşmak için Ayarlar → plan.json dışa aktar adımını kullanın.',
+  'admin.draftBanner': 'Bu cihazda yayınlanmamış değişiklikler var. Paylaşmak için Ayarlar → Yayınla adımını kullanın.',
 
   'publish.title': 'Yayınla',
   'publish.hint': "'Yerel taslak', bu tarayıcıda başkalarının henüz göremediği değişiklikler olduğu anlamına gelir. 'Yayında', veritabanında kayıtlı planı görüntülediğiniz anlamına gelir.",
   'publish.draft': 'Yerel taslak',
   'publish.published': 'Yayında',
-  'publish.text': 'Değişiklikler yayınlanana kadar bu tarayıcıda saklanır. Herkesle paylaşmak için yönetici şifresini girip yayınlayın.',
-  'publish.password': 'Yönetici şifresi',
+  'publish.text': 'Değişiklikler yayınlanana kadar bu tarayıcıda saklanır. Yayınladığınızda herkes hemen görür.',
   'publish.toDb': 'Yayınla',
   'publish.saving': 'Yayınlanıyor…',
   'publish.saved': 'Plan yayınlandı.',
-  'publish.unauthorized': 'Yönetici şifresi yanlış.',
+  'publish.sessionExpired': 'Oturumunuzun süresi doldu. Tekrar giriş yapın; taslağınız korunur.',
   'publish.saveFailed': 'Yayınlama başarısız: {error}',
+  'publish.signedInAs': '{name} olarak giriş yapıldı',
+  'publish.logout': 'Çıkış yap',
+
+  'history.title': 'Yayın geçmişi',
+  'history.hint': 'Her yayın burada saklanır. Eski bir sürümü taslağınıza yükleyin, kontrol edin ve geri yüklemek için Yayınla’ya basın.',
+  'history.refresh': 'Yenile',
+  'history.by': '{name} tarafından',
+  'history.current': 'güncel',
+  'history.load': 'Yükle',
+  'history.loadConfirm': 'Mevcut taslağınız bu sürümle değiştirilsin mi?',
+  'history.loaded': 'Sürüm taslağınıza yüklendi. Herkes için geri yüklemek üzere yayınlayın.',
+  'history.empty': 'Henüz yayın yok.',
+  'history.failed': 'Geçmiş yüklenemedi: {error}',
+
+  'login.title': 'Yönetici girişi',
+  'login.username': 'Kullanıcı adı',
+  'login.password': 'Şifre',
+  'login.submit': 'Giriş yap',
+  'login.signingIn': 'Giriş yapılıyor…',
+  'login.invalid': 'Kullanıcı adı veya şifre yanlış.',
+  'login.locked': 'Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin.',
+  'login.failed': 'Giriş başarısız: {error}',
   'publish.export': 'plan.json dışa aktar',
   'publish.import': 'JSON içe aktar',
   'publish.discard': 'Taslağı sil',
@@ -354,11 +400,6 @@ const tr = {
 
 const DICTIONARIES = { en, tr };
 
-export function detectLanguage(stored) {
-  if (DICTIONARIES[stored]) return stored;
-  return (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en';
-}
-
 function makeT(lang) {
   const dict = DICTIONARIES[lang] || en;
   return (key, vars) => {
@@ -368,10 +409,19 @@ function makeT(lang) {
   };
 }
 
-const I18nContext = createContext({ lang: 'en', t: makeT('en') });
+const I18nContext = createContext({ lang: 'en', t: makeT('en'), setLang: () => {} });
 
-export function I18nProvider({ lang, children }) {
-  const value = useMemo(() => ({ lang, t: makeT(lang) }), [lang]);
+export function I18nProvider({ initialLang, children }) {
+  const [lang, setLang] = useState(DICTIONARIES[initialLang] ? initialLang : 'en');
+  // Set synchronously so date helpers format correctly during this render.
+  setLocale(lang);
+
+  useEffect(() => {
+    setPrefCookie(PREF_COOKIES.lang, lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  const value = useMemo(() => ({ lang, t: makeT(lang), setLang }), [lang]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

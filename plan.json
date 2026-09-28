@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-28T10:46:02.810Z",
+  "teams": [
+    {
+      "id": "red",
+      "name": "Red Team",
+      "color": "rose"
+    },
+    {
+      "id": "white",
+      "name": "White Team",
+      "color": "neutral"
+    }
+  ],
+  "rotations": [
+    {
+      "id": "p0m1y6vhmukzk7in",
+      "name": "Q4 Plan",
+      "start": "2026-10-01",
+      "end": "2026-12-31",
+      "startTeamId": "red",
+      "firstHalf": [
+        1,
+        2,
+        3
+      ],
+      "secondHalf": [
+        3,
+        4,
+        5
+      ],
+      "alternate": true
+    }
+  ],
+  "holidays": [
+    {
+      "id": "itgcto35mukznzoc",
+      "name": "Cumhuriyet Bayramı",
+      "start": "2026-10-29",
+      "end": "2026-10-29"
+    }
+  ],
+  "overrides": {
+    "2026-09-03": {
+      "red": "office"
+    },
+    "2026-09-04": {
+      "red": "office"
+    },
+    "2026-09-07": {
+      "red": "office"
+    },
+    "2026-09-08": {
+      "red": "office"
+    },
+    "2026-09-09": {
+      "red": "office"
+    },
+    "2026-10-01": {
+      "red": "office",
+      "white": "home"
+    },
+    "2026-10-02": {
+      "red": "office",
+      "white": "home"
+    },
+    "2026-10-05": {
+      "red": "office"
+    },
+    "2026-10-06": {
+      "red": "office"
+    },
+    "2026-10-07": {
+      "red": "office"
+    },
+    "2026-12-31": {
+      "red": "home",
+      "white": "home"
+    }
+  }
+}
