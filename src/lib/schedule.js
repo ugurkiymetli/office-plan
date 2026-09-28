@@ -177,8 +177,8 @@ export function createDefaultPlan() {
     version: 1,
     updatedAt: new Date().toISOString(),
     teams: [
-      { id: 'red', name: 'Red Team', color: 'rose' },
-      { id: 'white', name: 'White Team', color: 'neutral' },
+      { id: 'red', color: 'rose' },
+      { id: 'white', color: 'neutral' },
     ],
     rotations: [
       {
@@ -208,12 +208,13 @@ export function normalizePlan(raw) {
   if (!raw || typeof raw !== 'object') throw new Error('Plan must be a JSON object.');
   if (!Array.isArray(raw.teams) || raw.teams.length !== 2) throw new Error('Plan must contain exactly 2 teams.');
 
+  // Team names are derived from the color (see teamName in i18n), so colors must differ.
   const teams = raw.teams.map((t, i) => ({
     id: String(t?.id || `team${i + 1}`).slice(0, 40),
-    name: String(t?.name || `Team ${i + 1}`).slice(0, 40),
     color: TEAM_COLORS[t?.color] ? t.color : i === 0 ? 'rose' : 'neutral',
   }));
   if (teams[0].id === teams[1].id) throw new Error('Team ids must be unique.');
+  if (teams[1].color === teams[0].color) teams[1].color = Object.keys(TEAM_COLORS).find((c) => c !== teams[0].color);
   const teamIds = teams.map((t) => t.id);
 
   const rotations = (Array.isArray(raw.rotations) ? raw.rotations : [])

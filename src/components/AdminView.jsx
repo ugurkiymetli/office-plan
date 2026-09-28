@@ -248,40 +248,37 @@ function HistoryCard({ refreshKey, onLoad }) {
 
 function TeamsCard({ plan, updatePlan }) {
   const { t } = useI18n();
-  const setTeam = (id, patch) =>
-    updatePlan((p) => ({ ...p, teams: p.teams.map((tm) => (tm.id === id ? { ...tm, ...patch } : tm)) }));
+  const setColor = (id, color) =>
+    updatePlan((p) => ({ ...p, teams: p.teams.map((tm) => (tm.id === id ? { ...tm, color } : tm)) }));
 
   return (
     <Card icon={Users} title={t('teams.title')} hint={t('teams.hint')}>
       <div className="grid sm:grid-cols-2 gap-4">
-        {plan.teams.map((team) => (
-          <div key={team.id} className="space-y-3 p-4 rounded-xl border bg-neutral-100/80 border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-800">
-            <Field label={t('teams.name')} hint={t('teams.nameHint')}>
-              <input
-                className={inputClass}
-                value={team.name}
-                maxLength={40}
-                onChange={(e) => setTeam(team.id, { name: e.target.value })}
-              />
-            </Field>
-            <Field label={t('teams.color')} hint={t('teams.colorHint')}>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(TEAM_COLORS).map(([key, c]) => (
-                <button
-                  key={key}
-                  type="button"
-                  title={t(`color.${key}`)}
-                  aria-label={t(`color.${key}`)}
-                  onClick={() => setTeam(team.id, { color: key })}
-                  className={`w-8 h-8 rounded-full ring-1 ring-black/10 dark:ring-white/10 ${c.dot} ${
-                    team.color === key ? 'outline-2 outline-offset-2 outline-neutral-900 dark:outline-neutral-100' : ''
-                  }`}
-                />
-              ))}
+        {plan.teams.map((team) => {
+          const otherColor = plan.teams.find((tm) => tm.id !== team.id)?.color;
+          return (
+            <div key={team.id} className="space-y-3 p-4 rounded-xl border bg-neutral-100/80 border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-800">
+              <TeamBadge team={team} />
+              <Field label={t('teams.color')} hint={t('teams.colorHint')}>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(TEAM_COLORS).map(([key, c]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      title={t(`color.${key}`)}
+                      aria-label={t(`color.${key}`)}
+                      disabled={key === otherColor}
+                      onClick={() => setColor(team.id, key)}
+                      className={`w-8 h-8 rounded-full ring-1 ring-black/10 dark:ring-white/10 disabled:opacity-25 disabled:pointer-events-none ${c.dot} ${
+                        team.color === key ? 'outline-2 outline-offset-2 outline-neutral-900 dark:outline-neutral-100' : ''
+                      }`}
+                    />
+                  ))}
+                </div>
+              </Field>
             </div>
-            </Field>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
@@ -315,11 +312,11 @@ function emptyRotation(plan) {
 }
 
 function RotationSummary({ rotation, plan, limit }) {
-  const { t } = useI18n();
+  const { t, teamName } = useI18n();
   const [copied, setCopied] = useState(false);
   const runs = summarizeRotation(rotation, plan.teams);
-  const teamName = (id) => plan.teams.find((tm) => tm.id === id)?.name;
-  const text = runs.map((r) => `${formatRange(r.start, r.end)}: ${teamName(r.teamId)}`).join('\n');
+  const nameOf = (id) => teamName(plan.teams.find((tm) => tm.id === id));
+  const text = runs.map((r) => `${formatRange(r.start, r.end)}: ${nameOf(r.teamId)}`).join('\n');
 
   const copy = async () => {
     try {
@@ -364,7 +361,7 @@ function RotationSummary({ rotation, plan, limit }) {
 }
 
 function RotationForm({ plan, initial, onSave, onCancel }) {
-  const { t } = useI18n();
+  const { t, teamName } = useI18n();
   const [form, setForm] = useState(initial);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const valid = Boolean(form.start && form.end && form.start <= form.end && (form.firstHalf.length || form.secondHalf.length));
@@ -402,7 +399,7 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
 
       <Field label={t('rot.startTeam')} hint={t('rot.startTeamHint')}>
         <Segmented
-          options={plan.teams.map((tm) => ({ value: tm.id, label: tm.name, icon: <TeamDot team={tm} /> }))}
+          options={plan.teams.map((tm) => ({ value: tm.id, label: teamName(tm), icon: <TeamDot team={tm} /> }))}
           value={form.startTeamId}
           onChange={(v) => set({ startTeamId: v })}
         />
@@ -591,7 +588,7 @@ function applyOverrides(overrides, dates, teamIds, value) {
 }
 
 function CalendarCard({ plan, updatePlan }) {
-  const { t } = useI18n();
+  const { t, teamName } = useI18n();
   const [month, setMonth] = useState(() => {
     const d = parseKey(todayKey());
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -661,7 +658,7 @@ function CalendarCard({ plan, updatePlan }) {
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
         {plan.teams.map((tm) => (
           <span key={tm.id} className="inline-flex items-center gap-1.5">
-            <TeamDot team={tm} className="w-2 h-2" /> {t('schedule.inOffice', { team: tm.name })}
+            <TeamDot team={tm} className="w-2 h-2" /> {t('schedule.inOffice', { team: teamName(tm) })}
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5">
@@ -686,7 +683,7 @@ function CalendarCard({ plan, updatePlan }) {
         <Field label={t('calc.team')} hint={t('calc.teamHint')}>
           <Segmented
             size="sm"
-            options={[{ value: 'all', label: t('calc.both') }, ...plan.teams.map((tm) => ({ value: tm.id, label: tm.name }))]}
+            options={[{ value: 'all', label: t('calc.both') }, ...plan.teams.map((tm) => ({ value: tm.id, label: teamName(tm) }))]}
             value={bulk.team}
             onChange={(v) => setBulk({ ...bulk, team: v })}
           />

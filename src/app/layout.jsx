@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { Inter, Outfit } from 'next/font/google';
 import Header from '@/components/Header';
 import { I18nProvider } from '@/lib/i18n';
@@ -9,7 +9,32 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ['latin', 'latin-ext'], variable: '--font-outfit-family' });
 
-export const metadata = { title: 'Office Plan' };
+const SITE_NAME = 'Ofis Planı';
+const DESCRIPTION = 'Bugün ofiste mi, evde mi? Takımının güncel ofis, ev ve tatil günlerini tek bakışta gör.';
+
+function siteUrl() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return 'http://localhost:3000';
+}
+
+export const metadata = {
+  metadataBase: new URL(siteUrl()),
+  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
+  description: DESCRIPTION,
+  applicationName: SITE_NAME,
+  appleWebApp: { title: SITE_NAME, statusBarStyle: 'black-translucent' },
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: DESCRIPTION,
+    locale: 'tr_TR',
+    alternateLocale: ['en_US'],
+  },
+  twitter: { card: 'summary_large_image', title: SITE_NAME, description: DESCRIPTION },
+};
 
 export const viewport = {
   width: 'device-width',
@@ -27,8 +52,8 @@ function adminTabEnabled() {
 }
 
 export default async function RootLayout({ children }) {
-  const [store, hdrs] = await Promise.all([cookies(), headers()]);
-  const lang = pickLanguage(store.get(PREF_COOKIES.lang)?.value, hdrs.get('accept-language') || '');
+  const store = await cookies();
+  const lang = pickLanguage(store.get(PREF_COOKIES.lang)?.value);
   const theme = store.get(PREF_COOKIES.theme)?.value;
   const showAdmin = adminTabEnabled() || (await hasSessionCookie());
 

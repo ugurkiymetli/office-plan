@@ -28,9 +28,10 @@ const HERO_STYLE = {
 };
 
 export function TeamPicker({ plan, teamId, onChange }) {
+  const { teamName } = useI18n();
   return (
     <Segmented
-      options={plan.teams.map((t) => ({ value: t.id, label: t.name, icon: <TeamDot team={t} /> }))}
+      options={plan.teams.map((t) => ({ value: t.id, label: teamName(t), icon: <TeamDot team={t} /> }))}
       value={teamId}
       onChange={onChange}
     />
@@ -44,7 +45,7 @@ function nextWorkday(key) {
 }
 
 export default function ScheduleView({ plan, initialTeamId }) {
-  const { t } = useI18n();
+  const { t, teamName } = useI18n();
   const today = todayKey();
   const [teamId, setTeamId] = useState(initialTeamId);
   const [month, setMonth] = useState(() => {
@@ -110,7 +111,7 @@ export default function ScheduleView({ plan, initialTeamId }) {
         </div>
         <div className="mt-4 pt-4 border-t border-current/10 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold">
           <span className="flex items-center gap-1.5">
-            <TeamDot team={other} /> {other.name}: {t(`status.${otherStatus.status}`)}
+            <TeamDot team={other} /> {teamName(other)}: {t(`status.${otherStatus.status}`)}
           </span>
           {nextOffice && todayStatus.status !== 'office' && (
             <span>{t('schedule.nextOffice', { date: formatDate(nextOffice) })}</span>
@@ -179,7 +180,7 @@ export default function ScheduleView({ plan, initialTeamId }) {
             <StatusBadge key={s} status={s} />
           ))}
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
-            <TeamDot team={other} className="w-1.5 h-1.5" /> {t('schedule.inOffice', { team: other.name })}
+            <TeamDot team={other} className="w-1.5 h-1.5" /> {t('schedule.inOffice', { team: teamName(other) })}
           </span>
         </div>
       </Card>

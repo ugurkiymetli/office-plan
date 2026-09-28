@@ -161,11 +161,12 @@ export function PlanFooter({ updatedAt }) {
 }
 
 export function TeamBadge({ team }) {
+  const { teamName } = useI18n();
   const c = TEAM_COLORS[team?.color] || TEAM_COLORS.neutral;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-bold ${c.badge}`}>
       <TeamDot team={team} className="w-2 h-2" />
-      {team?.name}
+      {team && teamName(team)}
     </span>
   );
 }

@@ -121,9 +121,8 @@ const en = {
   'publish.discardTip': "Deletes the changes saved in this browser and reloads the published plan. This can't be undone, so export first if you want to keep them.",
 
   'teams.title': 'Teams',
-  'teams.hint': "Rename teams or change their colors. Users' saved team choice keeps working after a rename.",
-  'teams.name': 'Team name',
-  'teams.nameHint': 'Shown in the team picker, the calendar and the copied schedule text.',
+  'teams.hint': 'Team names come from their color (e.g. Red Team) and follow the selected language. Users\' saved team choice keeps working after a color change.',
+  'team.name': '{color} Team',
   'teams.color': 'Color',
   'teams.colorHint': "Color of the team's dot and badge. Pick different colors so the teams are easy to tell apart on the calendar.",
 
@@ -317,9 +316,8 @@ const tr = {
   'publish.discardTip': 'Bu tarayıcıda kaydedilen değişiklikleri siler ve yayındaki planı yeniden yükler. Geri alınamaz; saklamak istiyorsanız önce dışa aktarın.',
 
   'teams.title': 'Takımlar',
-  'teams.hint': 'Takımları yeniden adlandırın veya renklerini değiştirin. Kullanıcıların kayıtlı takım seçimi ad değişikliğinden sonra da çalışır.',
-  'teams.name': 'Takım adı',
-  'teams.nameHint': 'Takım seçicide, takvimde ve kopyalanan plan metninde gösterilir.',
+  'teams.hint': 'Takım adları renklerinden oluşur (ör. Kırmızı Takım) ve seçili dile göre gösterilir. Kullanıcıların kayıtlı takım seçimi renk değişikliğinden sonra da çalışır.',
+  'team.name': '{color} Takım',
   'teams.color': 'Renk',
   'teams.colorHint': 'Takımın nokta ve etiket rengi. Takımları takvimde kolayca ayırt etmek için farklı renkler seçin.',
 
@@ -409,10 +407,10 @@ function makeT(lang) {
   };
 }
 
-const I18nContext = createContext({ lang: 'en', t: makeT('en'), setLang: () => {} });
+const I18nContext = createContext({ lang: 'tr', t: makeT('tr'), teamName: () => '', setLang: () => {} });
 
 export function I18nProvider({ initialLang, children }) {
-  const [lang, setLang] = useState(DICTIONARIES[initialLang] ? initialLang : 'en');
+  const [lang, setLang] = useState(DICTIONARIES[initialLang] ? initialLang : 'tr');
   // Set synchronously so date helpers format correctly during this render.
   setLocale(lang);
 
@@ -421,7 +419,11 @@ export function I18nProvider({ initialLang, children }) {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const value = useMemo(() => ({ lang, t: makeT(lang), setLang }), [lang]);
+  const value = useMemo(() => {
+    const t = makeT(lang);
+    const teamName = (team) => t('team.name', { color: t(`color.${team?.color}`) });
+    return { lang, t, teamName, setLang };
+  }, [lang]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
