@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { CalendarDays, CalendarRange, Users } from 'lucide-react';
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import {
   STATUS,
   addDays,
   formatDate,
+  formatRange,
   getDayStatus,
   isoWeekday,
   mondayOf,
@@ -44,6 +45,9 @@ function nextWorkday(key) {
   return k;
 }
 
+const navBtn =
+  'p-2 rounded-xl bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all';
+
 export default function ScheduleView({ plan, initialTeamId }) {
   const { t, teamName } = useI18n();
   const today = todayKey();
@@ -53,6 +57,7 @@ export default function ScheduleView({ plan, initialTeamId }) {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selected, setSelected] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const onTeamChange = (id) => {
     setTeamId(id);
@@ -73,8 +78,11 @@ export default function ScheduleView({ plan, initialTeamId }) {
   const otherStatus = getDayStatus(plan, today, other.id);
   const HeroIcon = STATUS_ICONS[todayStatus.status];
 
-  const weekStart = mondayOf(nextWorkday(today));
+  const weekStart = addDays(mondayOf(nextWorkday(today)), weekOffset * 7);
   const weekDays = [0, 1, 2, 3, 4].map((i) => addDays(weekStart, i));
+  const weekDiff = Math.round((parseKey(weekStart) - parseKey(mondayOf(today))) / (7 * 86400000));
+  const weekRange = formatRange(weekDays[0], weekDays[4]);
+  const weekLabel = { [-1]: t('schedule.lastWeek'), 0: t('schedule.thisWeek'), 1: t('schedule.nextWeek') }[weekDiff];
   const nextOffice = (() => {
     for (let i = 1; i <= 120; i++) {
       const k = addDays(today, i);
@@ -119,8 +127,26 @@ export default function ScheduleView({ plan, initialTeamId }) {
         </div>
       </section>
 
-      <Card icon={CalendarRange} title={weekStart === mondayOf(today) ? t('schedule.thisWeek') : t('schedule.nextWeek')}>
-        <ul className="space-y-2">
+      <Card icon={CalendarRange} title={t('schedule.week')}>
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" onClick={() => setWeekOffset((w) => w - 1)} className={navBtn} aria-label={t('week.prev')}>
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekOffset(0)}
+            disabled={weekOffset === 0}
+            title={t('week.current')}
+            className="min-w-0 text-center disabled:cursor-default"
+          >
+            <span className="block font-outfit font-bold text-base text-neutral-900 dark:text-neutral-100">{weekLabel ?? weekRange}</span>
+            {weekLabel && <span className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400">{weekRange}</span>}
+          </button>
+          <button type="button" onClick={() => setWeekOffset((w) => w + 1)} className={navBtn} aria-label={t('week.next')}>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <ul className="grid gap-2 sm:grid-cols-5">
           {weekDays.map((k) => {
             const s = getDayStatus(plan, k, teamId);
             const o = getDayStatus(plan, k, other.id);
@@ -130,19 +156,19 @@ export default function ScheduleView({ plan, initialTeamId }) {
                 <button
                   type="button"
                   onClick={() => setSelected(k)}
-                  className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border text-left transition-all bg-neutral-100/80 text-neutral-800 border-neutral-200 dark:bg-neutral-800/60 dark:text-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 ${
+                  className={`w-full h-full flex sm:flex-col items-center sm:items-start justify-between gap-3 sm:gap-2 px-3.5 py-3 rounded-xl border text-left transition-all bg-neutral-100/80 text-neutral-800 border-neutral-200 dark:bg-neutral-800/60 dark:text-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 ${
                     k === today ? 'ring-2 ring-neutral-900 dark:ring-neutral-100' : ''
                   }`}
                 >
                   <div className="min-w-0">
                     <p className="font-outfit font-bold text-sm">{formatDate(k, { weekday: 'long' })}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate sm:whitespace-normal">
                       {formatDate(k, { day: 'numeric', month: 'short' })}
                       {s.holiday ? ` · ${s.holiday.name}` : ''}
                       {overlap ? ` · ${t('schedule.bothInOffice')}` : ''}
                     </p>
                   </div>
-                  <StatusBadge status={s.status} />
+                  <StatusBadge status={s.status} className="shrink-0" />
                 </button>
               </li>
             );
