@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-28T00:00:00.000Z",
+  "teams": [
+    { "id": "red", "name": "Red Team", "color": "rose" },
+    { "id": "white", "name": "White Team", "color": "neutral" }
+  ],
+  "rotations": [
+    {
+      "id": "q4-2026",
+      "name": "Oct–Dec 2026 rotation",
+      "start": "2026-10-01",
+      "end": "2026-12-31",
+      "startTeamId": "red",
+      "firstHalf": [1, 2, 3],
+      "secondHalf": [3, 4, 5],
+      "alternate": true
+    }
+  ],
+  "holidays": [],
+  "overrides": {}
+}
