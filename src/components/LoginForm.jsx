@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, ShieldCheck } from 'lucide-react';
-import { Card, Field, inputClass, primaryButton } from './ui';
+import { Card, Field } from './ui';
+import { Input } from '@/components/arc/input/input';
+import { Button } from '@/components/arc/button/button';
 import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api';
 
@@ -32,8 +34,7 @@ export default function LoginForm() {
     <Card icon={ShieldCheck} title={t('login.title')} className="max-w-md mx-auto">
       <form onSubmit={submit} className="space-y-4">
         <Field label={t('login.username')}>
-          <input
-            className={inputClass}
+          <Input
             value={form.username}
             autoComplete="username"
             maxLength={64}
@@ -42,18 +43,17 @@ export default function LoginForm() {
           />
         </Field>
         <Field label={t('login.password')}>
-          <input
+          <Input
             type="password"
-            className={inputClass}
             value={form.password}
             autoComplete="current-password"
             maxLength={256}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
         </Field>
-        <button type="submit" disabled={busy || !form.username || !form.password} className={`${primaryButton} w-full`}>
+        <Button type="submit" variant="primary" size="md" disabled={busy || !form.username || !form.password} className="w-full">
           <LogIn className="w-4 h-4" /> {busy ? t('login.signingIn') : t('login.submit')}
-        </button>
+        </Button>
         {error && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{error}</p>}
       </form>
     </Card>

@@ -5,6 +5,9 @@ import { createPortal } from 'react-dom';
 import { Building2, House, Palmtree, CalendarOff, Moon, CircleDashed, Info } from 'lucide-react';
 import { STATUS, TEAM_COLORS, formatDate, toZonedKey, weekdayName } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
+import { Badge } from '@/components/arc/badge/badge';
+import { Button } from '@/components/arc/button/button';
+import SegmentedControl from '@/components/arc/segmented-control/segmented-control';
 
 export const STATUS_ICONS = {
   office: Building2,
@@ -29,8 +32,6 @@ export const dangerButton =
 
 const subscribeNoop = () => () => {};
 
-// Server and browser ICU data format dates differently (e.g. Turkish "Eki" vs "Ekim"),
-// so date-heavy views render only after hydration.
 export function ClientOnly({ children }) {
   const { t } = useI18n();
   const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
@@ -44,6 +45,7 @@ export function InfoTip({ text, label }) {
   const tipRef = useRef(null);
 
   const show = () => {
+    if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     const width = Math.min(280, window.innerWidth - 16);
     const left = Math.min(Math.max(8, r.left + r.width / 2 - width / 2), window.innerWidth - width - 8);
@@ -136,13 +138,20 @@ export function Field({ label, hint, children }) {
 
 export function StatusBadge({ status, className = '' }) {
   const { t } = useI18n();
-  const s = STATUS[status] || STATUS.none;
   const Icon = STATUS_ICONS[status] || CircleDashed;
+  const toneMap = {
+    office: 'success',
+    home: 'info',
+    holiday: 'warning',
+    off: 'neutral',
+    weekend: 'neutral',
+    none: 'neutral',
+  };
+
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${s.badge} ${className}`}>
-      <Icon className="w-3 h-3" />
+    <Badge tone={toneMap[status] || 'neutral'} size="sm" icon={<Icon className="w-3 h-3" />} className={className}>
       {t(`status.${STATUS[status] ? status : 'none'}`)}
-    </span>
+    </Badge>
   );
 }
 
@@ -162,55 +171,41 @@ export function PlanFooter({ updatedAt }) {
 
 export function TeamBadge({ team }) {
   const { teamName } = useI18n();
-  const c = TEAM_COLORS[team?.color] || TEAM_COLORS.neutral;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-bold ${c.badge}`}>
-      <TeamDot team={team} className="w-2 h-2" />
+    <Badge tone="neutral" size="sm" icon={<TeamDot team={team} className="w-2 h-2" />}>
       {team && teamName(team)}
-    </span>
+    </Badge>
   );
 }
 
-export function Segmented({ options, value, onChange, size = 'md' }) {
-  return (
-    <div className="flex bg-neutral-100 dark:bg-neutral-900/60 p-1 rounded-xl border border-neutral-200 dark:border-neutral-800/80">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 ${size === 'sm' ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} rounded-lg font-bold transition-all ${
-            value === o.value
-              ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm'
-              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-          }`}
-        >
-          {o.icon}
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
+export function Segmented({ options, value, onChange }) {
+  const formattedOptions = options.map((o) => ({
+    value: o.value,
+    label: o.label,
+    accessory: o.icon ? <span className="ml-1.5 inline-flex items-center">{o.icon}</span> : null,
+  }));
+
+  return <SegmentedControl options={formattedOptions} value={value} onValueChange={onChange} />;
 }
 
 export function DayToggles({ value, onChange, days }) {
   const toggle = (d) => onChange(value.includes(d) ? value.filter((x) => x !== d) : [...value, d].sort());
   return (
     <div className="flex flex-wrap gap-1.5">
-      {days.map((d) => (
-        <button
-          key={d.value}
-          type="button"
-          onClick={() => toggle(d.value)}
-          className={`min-w-11 px-2.5 py-2 rounded-xl text-xs font-bold border transition-all ${
-            value.includes(d.value)
-              ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 border-neutral-900 dark:border-neutral-100'
-              : 'bg-neutral-100/80 text-neutral-800 border-neutral-200 dark:bg-neutral-800/60 dark:text-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600'
-          }`}
-        >
-          {weekdayName(d.value)}
-        </button>
-      ))}
+      {days.map((d) => {
+        const active = value.includes(d.value);
+        return (
+          <Button
+            key={d.value}
+            type="button"
+            variant={active ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => toggle(d.value)}
+          >
+            {weekdayName(d.value)}
+          </Button>
+        );
+      })}
     </div>
   );
 }

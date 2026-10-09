@@ -50,11 +50,10 @@ import {
   StatusBadge,
   TeamBadge,
   TeamDot,
-  dangerButton,
-  inputClass,
-  primaryButton,
-  secondaryButton,
 } from './ui';
+import { Button } from '@/components/arc/button/button';
+import { Input } from '@/components/arc/input/input';
+import { Checkbox } from '@/components/arc/checkbox/checkbox';
 import MonthCalendar from './MonthCalendar';
 import DayDetailSheet from './DayDetailSheet';
 
@@ -131,24 +130,25 @@ function PublishCard({ plan, isDraft, username, onImport, onDiscard, onPublish, 
       }
     >
       <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('publish.text')}</p>
-      <button type="button" onClick={publish} disabled={saving} className={`${primaryButton} w-full`}>
+      <Button type="button" variant="primary" size="md" onClick={publish} disabled={saving} className="w-full">
         <CloudUpload className="w-4 h-4" /> {saving ? t('publish.saving') : t('publish.toDb')}
-      </button>
+      </Button>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button type="button" onClick={exportPlan} className={`${secondaryButton} py-3`}>
+        <Button type="button" variant="secondary" size="sm" onClick={exportPlan}>
           <Download className="w-4 h-4" /> {t('publish.export')}
-        </button>
-        <button type="button" onClick={() => fileRef.current?.click()} className={`${secondaryButton} py-3`}>
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
           <Upload className="w-3.5 h-3.5" /> {t('publish.import')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="danger"
+          size="sm"
           disabled={!isDraft}
           onClick={() => window.confirm(t('publish.discardConfirm')) && onDiscard()}
-          className={`${dangerButton} py-3 disabled:opacity-40 disabled:pointer-events-none`}
         >
           <RotateCcw className="w-3.5 h-3.5" /> {t('publish.discard')}
-        </button>
+        </Button>
       </div>
       <ul className="space-y-1.5 text-xs text-neutral-500 dark:text-neutral-400">
         {['export', 'import', 'discard'].map((k) => (
@@ -168,9 +168,9 @@ function PublishCard({ plan, isDraft, username, onImport, onDiscard, onPublish, 
       )}
       <div className="flex items-center justify-between gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800/80">
         <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{t('publish.signedInAs', { name: username })}</p>
-        <button type="button" onClick={onLogout} className={secondaryButton}>
+        <Button type="button" variant="secondary" size="sm" onClick={onLogout}>
           <LogOut className="w-3.5 h-3.5" /> {t('publish.logout')}
-        </button>
+        </Button>
       </div>
     </Card>
   );
@@ -213,9 +213,9 @@ function HistoryCard({ refreshKey, onLoad }) {
       title={t('history.title')}
       hint={t('history.hint')}
       actions={
-        <button type="button" className={secondaryButton} aria-label={t('history.refresh')} onClick={refresh}>
+        <Button type="button" variant="secondary" size="sm" aria-label={t('history.refresh')} onClick={refresh}>
           <RefreshCw className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       }
     >
       {error && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{t('history.failed', { error })}</p>}
@@ -232,9 +232,9 @@ function HistoryCard({ refreshKey, onLoad }) {
                 {i === 0 ? ` · ${t('history.current')}` : ''}
               </p>
             </div>
-            <button type="button" disabled={i === 0} className={`${secondaryButton} disabled:opacity-40 disabled:pointer-events-none`} onClick={() => load(v.id)}>
+            <Button type="button" variant="secondary" size="sm" disabled={i === 0} onClick={() => load(v.id)}>
               <RotateCcw className="w-3.5 h-3.5" /> {t('history.load')}
-            </button>
+            </Button>
           </li>
         ))}
         {versions && !versions.length && <li className="text-sm text-neutral-500 dark:text-neutral-400">{t('history.empty')}</li>}
@@ -337,10 +337,10 @@ function RotationSummary({ rotation, plan, limit }) {
           <p className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">{t('rot.preview')}</p>
           <InfoTip text={t('rot.previewTip')} />
         </div>
-        <button type="button" onClick={copy} className={secondaryButton}>
+        <Button type="button" variant="secondary" size="sm" onClick={copy}>
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? t('rot.copied') : t('rot.copy')}
-        </button>
+        </Button>
       </div>
       <ul className="space-y-1">
         {runs.slice(0, limit).map((r) => {
@@ -369,14 +369,14 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
   return (
     <div className="space-y-4 p-4 rounded-xl border bg-neutral-100/80 border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-800 animate-fade-in">
       <Field label={t('rot.name')} hint={t('rot.nameHint')}>
-        <input className={inputClass} value={form.name} maxLength={80} placeholder={t('rot.namePlaceholder')} onChange={(e) => set({ name: e.target.value })} />
+        <Input value={form.name} maxLength={80} placeholder={t('rot.namePlaceholder')} onChange={(e) => set({ name: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t('rot.start')} hint={t('rot.startHint')}>
-          <input type="date" className={inputClass} value={form.start} onChange={(e) => set({ start: e.target.value })} />
+          <Input type="date" value={form.start} onChange={(e) => set({ start: e.target.value })} />
         </Field>
         <Field label={t('rot.end')} hint={t('rot.endHint')}>
-          <input type="date" className={inputClass} value={form.end} onChange={(e) => set({ end: e.target.value })} />
+          <Input type="date" value={form.end} onChange={(e) => set({ end: e.target.value })} />
         </Field>
       </div>
 
@@ -390,9 +390,9 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
       >
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
-            <button key={p.id} type="button" className={secondaryButton} onClick={() => set({ firstHalf: p.firstHalf, secondHalf: p.secondHalf, alternate: p.alternate })}>
+            <Button key={p.id} type="button" variant="secondary" size="sm" onClick={() => set({ firstHalf: p.firstHalf, secondHalf: p.secondHalf, alternate: p.alternate })}>
               <Wand2 className="w-3.5 h-3.5" /> {presetLabel(p, t)}
-            </button>
+            </Button>
           ))}
         </div>
       </Field>
@@ -414,7 +414,7 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
 
       <div className="flex items-start gap-1">
         <label className="flex items-start gap-3 cursor-pointer">
-          <input type="checkbox" className="mt-0.5 w-4 h-4 accent-neutral-900 dark:accent-neutral-100" checked={form.alternate} onChange={(e) => set({ alternate: e.target.checked })} />
+          <Checkbox checked={form.alternate} onCheckedChange={(checked) => set({ alternate: Boolean(checked) })} />
           <span className="text-sm text-neutral-700 dark:text-neutral-300">
             <b>{t('rot.swap')}</b> — {t('rot.swapDesc')}
           </span>
@@ -433,12 +433,12 @@ function RotationForm({ plan, initial, onSave, onCancel }) {
       )}
 
       <div className="flex gap-2">
-        <button type="button" disabled={!valid} className={`${primaryButton} flex-1`} onClick={() => onSave({ ...form, id: form.id || uid(), name: form.name.trim() || t('rot.defaultName', { date: formatDate(form.start) }) })}>
+        <Button type="button" variant="primary" size="md" disabled={!valid} className="flex-1" onClick={() => onSave({ ...form, id: form.id || uid(), name: form.name.trim() || t('rot.defaultName', { date: formatDate(form.start) }) })}>
           <Check className="w-4 h-4" /> {t('rot.save')}
-        </button>
-        <button type="button" className={`${secondaryButton} px-4`} onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="secondary" size="md" className="px-4" onClick={onCancel}>
           {t('common.cancel')}
-        </button>
+        </Button>
       </div>
       {!valid && (
         <p className="text-xs text-rose-600 dark:text-rose-400">{t('rot.invalid')}</p>
@@ -469,9 +469,9 @@ function RotationsCard({ plan, updatePlan }) {
       hint={t('rot.hint')}
       actions={
         !editing && (
-          <button type="button" className={secondaryButton} onClick={() => setEditing(emptyRotation(plan))}>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(emptyRotation(plan))}>
             <Plus className="w-3.5 h-3.5" /> {t('rot.new')}
-          </button>
+          </Button>
         )
       }
     >
@@ -495,12 +495,12 @@ function RotationsCard({ plan, updatePlan }) {
                 </p>
               </div>
               <div className="flex gap-1.5 shrink-0">
-                <button type="button" className={secondaryButton} aria-label={t('common.edit')} onClick={() => setEditing(r)}>
+                <Button type="button" variant="secondary" size="sm" aria-label={t('common.edit')} onClick={() => setEditing(r)}>
                   <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" className={dangerButton} aria-label={t('common.delete')} onClick={() => remove(r.id)}>
+                </Button>
+                <Button type="button" variant="danger" size="sm" aria-label={t('common.delete')} onClick={() => remove(r.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             </li>
           );
@@ -534,19 +534,19 @@ function HolidaysCard({ plan, updatePlan }) {
     <Card icon={Palmtree} title={t('hol.title')} hint={t('hol.hint')}>
       <form onSubmit={add} className="space-y-3">
         <Field label={t('hol.name')} hint={t('hol.nameHint')}>
-          <input className={inputClass} value={form.name} maxLength={80} placeholder={t('hol.namePlaceholder')} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input value={form.name} maxLength={80} placeholder={t('hol.namePlaceholder')} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('hol.from')} hint={t('hol.fromHint')}>
-            <input type="date" className={inputClass} value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
+            <Input type="date" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
           </Field>
           <Field label={t('hol.to')} hint={t('hol.toHint')}>
-            <input type="date" className={inputClass} value={form.end} min={form.start} onChange={(e) => setForm({ ...form, end: e.target.value })} />
+            <Input type="date" value={form.end} min={form.start} onChange={(e) => setForm({ ...form, end: e.target.value })} />
           </Field>
         </div>
-        <button type="submit" disabled={!valid} className={`${primaryButton} w-full`}>
+        <Button type="submit" variant="primary" size="md" disabled={!valid} className="w-full">
           <Plus className="w-4 h-4" /> {t('hol.add')}
-        </button>
+        </Button>
       </form>
 
       <ul className="space-y-2">
@@ -558,9 +558,9 @@ function HolidaysCard({ plan, updatePlan }) {
                 {h.start === h.end ? formatDate(h.start) : `${formatDate(h.start)} → ${formatDate(h.end)}`}
               </p>
             </div>
-            <button type="button" className={dangerButton} aria-label={t('common.delete')} onClick={() => remove(h.id)}>
+            <Button type="button" variant="danger" size="sm" aria-label={t('common.delete')} onClick={() => remove(h.id)}>
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </li>
         ))}
         {!plan.holidays.length && <li className="text-sm text-neutral-500 dark:text-neutral-400">{t('hol.empty')}</li>}
@@ -633,9 +633,9 @@ function CalendarCard({ plan, updatePlan }) {
       hint={t('calc.hint')}
       actions={
         overrideKeys.length > 0 && (
-          <button type="button" className={dangerButton} onClick={clearAll}>
+          <Button type="button" variant="danger" size="sm" onClick={clearAll}>
             <Trash2 className="w-3.5 h-3.5" /> {t('calc.clear', { n: overrideKeys.length })}
-          </button>
+          </Button>
         )
       }
     >
@@ -674,10 +674,10 @@ function CalendarCard({ plan, updatePlan }) {
         </p>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('calc.from')} hint={t('calc.fromHint')}>
-            <input type="date" className={inputClass} value={bulk.start} onChange={(e) => setBulk({ ...bulk, start: e.target.value })} />
+            <Input type="date" value={bulk.start} onChange={(e) => setBulk({ ...bulk, start: e.target.value })} />
           </Field>
           <Field label={t('calc.to')} hint={t('calc.toHint')}>
-            <input type="date" className={inputClass} value={bulk.end} min={bulk.start} onChange={(e) => setBulk({ ...bulk, end: e.target.value })} />
+            <Input type="date" value={bulk.end} min={bulk.start} onChange={(e) => setBulk({ ...bulk, end: e.target.value })} />
           </Field>
         </div>
         <Field label={t('calc.team')} hint={t('calc.teamHint')}>
@@ -698,14 +698,14 @@ function CalendarCard({ plan, updatePlan }) {
         </Field>
         <div className="flex items-center gap-1">
           <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 accent-neutral-900 dark:accent-neutral-100" checked={bulk.weekdaysOnly} onChange={(e) => setBulk({ ...bulk, weekdaysOnly: e.target.checked })} />
+            <Checkbox checked={bulk.weekdaysOnly} onCheckedChange={(checked) => setBulk({ ...bulk, weekdaysOnly: Boolean(checked) })} />
             {t('calc.weekdaysOnly')}
           </label>
           <InfoTip text={t('calc.weekdaysOnlyTip')} />
         </div>
-        <button type="submit" disabled={!bulkValid} className={`${primaryButton} w-full`}>
+        <Button type="submit" variant="primary" size="md" disabled={!bulkValid} className="w-full">
           <Check className="w-4 h-4" /> {t('calc.apply')}
-        </button>
+        </Button>
         {bulkMsg && <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{bulkMsg}</p>}
       </form>
 

@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import { I18nProvider } from '@/lib/i18n';
 import { hasSessionCookie } from '@/lib/auth';
 import { PREF_COOKIES, pickLanguage } from '@/lib/prefs';
+import "@/components/arc/foundation.css";
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter' });
@@ -44,7 +45,7 @@ export const viewport = {
 };
 
 // Applies the system theme before paint when the user hasn't picked one yet.
-const THEME_SCRIPT = `if(!document.cookie.includes('${PREF_COOKIES.theme}=')&&matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')`;
+const THEME_SCRIPT = `if(!document.cookie.includes('${PREF_COOKIES.theme}=')&&matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark');document.documentElement.dataset.theme='dark';}`;
 
 function adminTabEnabled() {
   const flag = process.env.SHOW_ADMIN_TAB;
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }) {
   return (
     <html
       lang={lang}
+      data-theme={theme === 'dark' ? 'dark' : 'light'}
       className={`${inter.variable} ${outfit.variable} ${theme === 'dark' ? 'dark' : ''}`}
       suppressHydrationWarning
     >

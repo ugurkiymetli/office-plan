@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WEEKDAYS, getLocale, parseKey, toKey, todayKey, weekdayName } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
+import { Button } from '@/components/arc/button/button';
 
 function buildMonthGrid(year, month) {
   const first = new Date(year, month, 1, 12);
@@ -27,15 +28,12 @@ export default function MonthCalendar({ month, onMonthChange, getCellClass, rend
     onMonthChange({ year: d.getFullYear(), month: d.getMonth() });
   };
 
-  const navBtn =
-    'p-2 rounded-xl bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all';
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <button type="button" onClick={() => shift(-1)} className={navBtn} aria-label={t('cal.prev')}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => shift(-1)} aria-label={t('cal.prev')}>
           <ChevronLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => {
@@ -46,9 +44,9 @@ export default function MonthCalendar({ month, onMonthChange, getCellClass, rend
         >
           {title}
         </button>
-        <button type="button" onClick={() => shift(1)} className={navBtn} aria-label={t('cal.next')}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => shift(1)} aria-label={t('cal.next')}>
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5">

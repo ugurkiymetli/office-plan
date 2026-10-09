@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, CalendarDays, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { CalendarCheck, CalendarDays, ShieldCheck } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { PREF_COOKIES, setPrefCookie } from '@/lib/prefs';
-
-const iconButton =
-  'rounded-xl bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all shadow-sm';
+import { ThemeSwitch } from '@/components/arc/theme-switch/theme-switch';
+import { Button } from '@/components/arc/button/button';
 
 export default function Header({ showAdmin, initialTheme }) {
   const { t, lang, setLang } = useI18n();
@@ -16,12 +15,15 @@ export default function Header({ showAdmin, initialTheme }) {
   const [theme, setTheme] = useState(initialTheme || 'light');
 
   useEffect(() => {
-    if (!initialTheme) setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    if (!initialTheme) {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
+    }
   }, [initialTheme]);
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
+  const handleThemeChange = (next) => {
     document.documentElement.classList.toggle('dark', next === 'dark');
+    document.documentElement.dataset.theme = next;
     setPrefCookie(PREF_COOKIES.theme, next);
     setTheme(next);
   };
@@ -69,18 +71,23 @@ export default function Header({ showAdmin, initialTheme }) {
               ))}
             </nav>
           )}
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
             aria-label={t('app.language')}
             title={t('app.language')}
-            className={`${iconButton} px-2.5 py-2 text-xs font-bold`}
           >
             {lang === 'tr' ? 'EN' : 'TR'}
-          </button>
-          <button type="button" onClick={toggleTheme} aria-label={t('app.toggleTheme')} className={`${iconButton} p-2 sm:p-2.5`}>
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          </Button>
+          <ThemeSwitch
+            theme={theme}
+            variant="rise"
+            iconOnly
+            onThemeChange={(next) => handleThemeChange(next)}
+            label={t('app.toggleTheme')}
+          />
         </div>
       </div>
     </header>

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { formatDate, getDayStatus } from '../lib/schedule';
 import { InfoTip, Segmented, StatusBadge, TeamBadge } from './ui';
+import { Button } from '@/components/arc/button/button';
 import { useI18n } from '../lib/i18n';
 
 const OVERRIDE_VALUES = ['auto', 'office', 'home', 'off'];
@@ -36,14 +37,15 @@ export default function DayDetailSheet({ plan, dateKey, onClose, editable = fals
               <p className="mt-1 text-sm font-semibold text-amber-600 dark:text-amber-400">{holiday.name}</p>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={onClose}
-            className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
             aria-label={t('common.close')}
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <ul className="space-y-2">

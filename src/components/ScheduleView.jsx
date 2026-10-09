@@ -14,6 +14,7 @@ import {
   todayKey,
 } from '../lib/schedule';
 import { Card, STATUS_ICONS, Segmented, StatusBadge, TeamDot } from './ui';
+import { Button } from '@/components/arc/button/button';
 import MonthCalendar from './MonthCalendar';
 import DayDetailSheet from './DayDetailSheet';
 import { useI18n } from '../lib/i18n';
@@ -44,9 +45,6 @@ function nextWorkday(key) {
   while (isoWeekday(k) >= 6) k = addDays(k, 1);
   return k;
 }
-
-const navBtn =
-  'p-2 rounded-xl bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all';
 
 export default function ScheduleView({ plan, initialTeamId }) {
   const { t, teamName } = useI18n();
@@ -129,9 +127,9 @@ export default function ScheduleView({ plan, initialTeamId }) {
 
       <Card icon={CalendarRange} title={t('schedule.week')}>
         <div className="flex items-center justify-between gap-2">
-          <button type="button" onClick={() => setWeekOffset((w) => w - 1)} className={navBtn} aria-label={t('week.prev')}>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w - 1)} aria-label={t('week.prev')}>
             <ChevronLeft className="w-4 h-4" />
-          </button>
+          </Button>
           <button
             type="button"
             onClick={() => setWeekOffset(0)}
@@ -142,9 +140,9 @@ export default function ScheduleView({ plan, initialTeamId }) {
             <span className="block font-outfit font-bold text-base text-neutral-900 dark:text-neutral-100">{weekLabel ?? weekRange}</span>
             {weekLabel && <span className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400">{weekRange}</span>}
           </button>
-          <button type="button" onClick={() => setWeekOffset((w) => w + 1)} className={navBtn} aria-label={t('week.next')}>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w + 1)} aria-label={t('week.next')}>
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
         <ul className="grid gap-2 sm:grid-cols-5">
           {weekDays.map((k) => {
