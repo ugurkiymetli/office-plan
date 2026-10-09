@@ -1,7 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  CalendarDays,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+} from 'lucide-react';
 import {
   STATUS,
   addDays,
@@ -17,6 +23,7 @@ import { Card, STATUS_ICONS, Segmented, StatusBadge, TeamDot } from './ui';
 import { Button } from '@/components/arc/button/button';
 import MonthCalendar from './MonthCalendar';
 import DayDetailSheet from './DayDetailSheet';
+import DebugPanel, { DebugToggleButton, isDebugEnabled } from './DebugPanel';
 import { useI18n } from '../lib/i18n';
 import { PREF_COOKIES, setPrefCookie } from '../lib/prefs';
 
@@ -48,8 +55,20 @@ function nextWorkday(key) {
 
 export default function ScheduleView({ plan, initialTeamId }) {
   const { t, teamName } = useI18n();
-  const today = todayKey();
+  const realToday = todayKey();
   const [teamId, setTeamId] = useState(initialTeamId);
+  const [realIsAfter18, setRealIsAfter18] = useState(false);
+
+  // Debug simulation states & env flag
+  const debugEnabled = isDebugEnabled();
+  const [debugDate, setDebugDate] = useState(null);
+  const [debugAfter18, setDebugAfter18] = useState(null);
+  const [showDebug, setShowDebug] = useState(false);
+
+  const today = debugDate || realToday;
+  const isAfter18 = debugAfter18 !== null ? debugAfter18 : realIsAfter18;
+  const isDebugActive = Boolean(debugDate || debugAfter18 !== null);
+
   const [month, setMonth] = useState(() => {
     const d = parseKey(today);
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -57,9 +76,18 @@ export default function ScheduleView({ plan, initialTeamId }) {
   const [selected, setSelected] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
+  useEffect(() => {
+    setRealIsAfter18(new Date().getHours() >= 18);
+  }, []);
+
   const onTeamChange = (id) => {
     setTeamId(id);
     setPrefCookie(PREF_COOKIES.team, id);
+  };
+
+  const resetDebug = () => {
+    setDebugDate(null);
+    setDebugAfter18(null);
   };
 
   if (!teamId || !plan.teams.some((t) => t.id === teamId)) {
@@ -72,9 +100,10 @@ export default function ScheduleView({ plan, initialTeamId }) {
   }
 
   const other = plan.teams.find((t) => t.id !== teamId);
-  const todayStatus = getDayStatus(plan, today, teamId);
-  const otherStatus = getDayStatus(plan, today, other.id);
-  const HeroIcon = STATUS_ICONS[todayStatus.status];
+  const heroDateKey = isAfter18 ? addDays(today, 1) : today;
+  const heroStatus = getDayStatus(plan, heroDateKey, teamId);
+  const heroOtherStatus = getDayStatus(plan, heroDateKey, other.id);
+  const HeroIcon = STATUS_ICONS[heroStatus.status];
 
   const weekStart = addDays(mondayOf(nextWorkday(today)), weekOffset * 7);
   const weekDays = [0, 1, 2, 3, 4].map((i) => addDays(weekStart, i));
@@ -83,11 +112,14 @@ export default function ScheduleView({ plan, initialTeamId }) {
   const weekLabel = { [-1]: t('schedule.lastWeek'), 0: t('schedule.thisWeek'), 1: t('schedule.nextWeek') }[weekDiff];
   const nextOffice = (() => {
     for (let i = 1; i <= 120; i++) {
-      const k = addDays(today, i);
+      const k = addDays(heroDateKey, i);
       if (getDayStatus(plan, k, teamId).status === 'office') return k;
     }
     return null;
   })();
+
+  const showOtherTeam = heroOtherStatus.status === 'office' || heroOtherStatus.status === 'home';
+  const showNextOffice = Boolean(nextOffice && heroStatus.status !== 'office');
 
   const monthPrefix = `${month.year}-${String(month.month + 1).padStart(2, '0')}`;
   const monthCounts = { office: 0, home: 0, holiday: 0 };
@@ -100,31 +132,64 @@ export default function ScheduleView({ plan, initialTeamId }) {
 
   return (
     <div className="space-y-6">
-      <TeamPicker plan={plan} teamId={teamId} onChange={onTeamChange} />
+      {/* Top Bar with Team Picker & Debug Toggle */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex-1">
+          <TeamPicker plan={plan} teamId={teamId} onChange={onTeamChange} />
+        </div>
+        {debugEnabled && (
+          <DebugToggleButton
+            isDebugActive={isDebugActive}
+            isOpen={showDebug}
+            onToggle={() => setShowDebug((d) => !d)}
+          />
+        )}
+      </div>
 
-      <section className={`p-5 sm:p-6 rounded-2xl border shadow-lg dark:shadow-2xl animate-fade-in ${HERO_STYLE[todayStatus.status]}`}>
+      {/* Debug & Test Control Panel */}
+      {debugEnabled && showDebug && (
+        <DebugPanel
+          plan={plan}
+          teamId={teamId}
+          today={today}
+          isAfter18={isAfter18}
+          debugDate={debugDate}
+          debugAfter18={debugAfter18}
+          onSetDebugDate={setDebugDate}
+          onSetDebugAfter18={setDebugAfter18}
+          onResetDebug={resetDebug}
+        />
+      )}
+
+      {/* Main Hero Card */}
+      <section className={`p-5 sm:p-6 rounded-2xl border shadow-lg dark:shadow-2xl animate-fade-in ${HERO_STYLE[heroStatus.status]}`}>
         <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">
-          {t('schedule.today')} · {formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}
+          {isAfter18 ? `${t('schedule.tomorrow')}` : t('schedule.today')} · {formatDate(heroDateKey, { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
         <div className="mt-3 flex items-center gap-4">
           <div className="w-14 h-14 shrink-0 rounded-2xl bg-white/70 dark:bg-neutral-950/40 flex items-center justify-center">
             <HeroIcon className="w-7 h-7" />
           </div>
           <div className="min-w-0">
-            <h2 className="font-outfit font-extrabold text-2xl sm:text-3xl leading-tight">{t(`hero.${todayStatus.status}`)}</h2>
-            {todayStatus.holiday && <p className="text-sm font-semibold">{todayStatus.holiday.name}</p>}
+            <h2 className="font-outfit font-extrabold text-2xl sm:text-3xl leading-tight">{t(`hero.${heroStatus.status}`)}</h2>
+            {heroStatus.holiday && <p className="text-sm font-semibold">{heroStatus.holiday.name}</p>}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-current/10 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold">
-          <span className="flex items-center gap-1.5">
-            <TeamDot team={other} /> {teamName(other)}: {t(`status.${otherStatus.status}`)}
-          </span>
-          {nextOffice && todayStatus.status !== 'office' && (
-            <span>{t('schedule.nextOffice', { date: formatDate(nextOffice) })}</span>
-          )}
-        </div>
+        {(showOtherTeam || showNextOffice) && (
+          <div className="mt-4 pt-4 border-t border-current/10 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold">
+            {showOtherTeam && (
+              <span className="flex items-center gap-1.5">
+                <TeamDot team={other} /> {teamName(other)}: {t(`status.${heroOtherStatus.status}`)}
+              </span>
+            )}
+            {showNextOffice && (
+              <span>{t('schedule.nextOffice', { date: formatDate(nextOffice) })}</span>
+            )}
+          </div>
+        )}
       </section>
 
+      {/* Week View */}
       <Card icon={CalendarRange} title={t('schedule.week')}>
         <div className="flex items-center justify-between gap-2">
           <Button type="button" variant="secondary" size="sm" onClick={() => setWeekOffset((w) => w - 1)} aria-label={t('week.prev')}>
@@ -174,6 +239,7 @@ export default function ScheduleView({ plan, initialTeamId }) {
         </ul>
       </Card>
 
+      {/* Month View */}
       <Card icon={CalendarDays} title={t('schedule.month')}>
         <div className="grid grid-cols-3 gap-2">
           {['office', 'home', 'holiday'].map((k) => (

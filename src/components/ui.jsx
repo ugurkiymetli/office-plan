@@ -149,7 +149,12 @@ export function StatusBadge({ status, className = '' }) {
   };
 
   return (
-    <Badge tone={toneMap[status] || 'neutral'} size="sm" icon={<Icon className="w-3 h-3" />} className={className}>
+    <Badge
+      tone={toneMap[status] || 'neutral'}
+      size="sm"
+      icon={<Icon className="w-3 h-3" />}
+      className={className}
+    >
       {t(`status.${STATUS[status] ? status : 'none'}`)}
     </Badge>
   );

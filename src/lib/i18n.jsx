@@ -50,7 +50,17 @@ const en = {
   'schedule.selectTeam': 'Select your team',
   'schedule.selectTeamText': 'Choose your team to see your office and home days. Your choice is saved on this device.',
   'schedule.today': 'Today',
+  'schedule.tomorrow': 'Tomorrow',
   'schedule.nextOffice': 'Next office day: {date}',
+
+  'debug.title': 'Debug & Test Panel',
+  'debug.reset': 'Reset Real Time',
+  'debug.timeBefore18': '< 18:00 (Today)',
+  'debug.timeAfter18': '≥ 18:00 (Tomorrow)',
+  'debug.presetOffice': 'Office Day',
+  'debug.presetHome': 'Home Day',
+  'debug.presetHoliday': 'Holiday',
+  'debug.presetWeekend': 'Weekend',
   'schedule.thisWeek': 'This week',
   'schedule.nextWeek': 'Next week',
   'schedule.lastWeek': 'Last week',
@@ -250,7 +260,18 @@ const tr = {
   'schedule.selectTeam': 'Takımınızı seçin',
   'schedule.selectTeamText': 'Ofis ve ev günlerinizi görmek için takımınızı seçin. Seçiminiz bu cihazda saklanır.',
   'schedule.today': 'Bugün',
+  'schedule.tomorrow': 'Yarın',
+  'schedule.after18': '18:00 sonrası',
   'schedule.nextOffice': 'Sonraki ofis günü: {date}',
+
+  'debug.title': 'Test & Hata Ayıklama Paneli',
+  'debug.reset': 'Gerçek Zamana Dön',
+  'debug.timeBefore18': '< 18:00 (Bugün)',
+  'debug.timeAfter18': '≥ 18:00 (Yarın)',
+  'debug.presetOffice': 'Ofis Günü',
+  'debug.presetHome': 'Ev Günü',
+  'debug.presetHoliday': 'Tatil',
+  'debug.presetWeekend': 'Hafta Sonu',
   'schedule.thisWeek': 'Bu hafta',
   'schedule.nextWeek': 'Gelecek hafta',
   'schedule.lastWeek': 'Geçen hafta',
@@ -417,7 +438,7 @@ function makeT(lang) {
   };
 }
 
-const I18nContext = createContext({ lang: 'tr', t: makeT('tr'), teamName: () => '', setLang: () => {} });
+const I18nContext = createContext({ lang: 'tr', t: makeT('tr'), teamName: () => '', setLang: () => { } });
 
 export function I18nProvider({ initialLang, children }) {
   const [lang, setLang] = useState(DICTIONARIES[initialLang] ? initialLang : 'tr');

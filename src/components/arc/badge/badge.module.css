@@ -43,7 +43,14 @@
 
 .neutral { --badge-color: var(--text-secondary); --badge-foreground: var(--text-secondary); --badge-background: var(--surface-muted); --badge-border: var(--border); }
 .success { --badge-color: var(--success); --badge-foreground: var(--success); --badge-background: color-mix(in oklab, var(--success) 10%, var(--surface)); --badge-border: color-mix(in oklab, var(--success) 25%, var(--border)); }
-.info { --badge-color: var(--accent); --badge-foreground: var(--accent-strong); --badge-background: var(--accent-subtle); --badge-border: color-mix(in oklab, var(--accent) 24%, var(--border)); }
+.info { --badge-color: #3b82f6; --badge-foreground: #2563eb; --badge-background: color-mix(in oklab, #3b82f6 12%, var(--surface)); --badge-border: color-mix(in oklab, #3b82f6 25%, var(--border)); }
+:global(.dark) .info,
+:global([data-theme="dark"]) .info {
+  --badge-color: #60a5fa;
+  --badge-foreground: #93c5fd;
+  --badge-background: color-mix(in oklab, #3b82f6 18%, var(--surface));
+  --badge-border: color-mix(in oklab, #3b82f6 35%, var(--border));
+}
 .warning { --badge-color: var(--warning); --badge-foreground: var(--warning); --badge-background: color-mix(in oklab, var(--warning) 11%, var(--surface)); --badge-border: color-mix(in oklab, var(--warning) 27%, var(--border)); }
 .danger { --badge-color: var(--danger); --badge-foreground: var(--danger); --badge-background: color-mix(in oklab, var(--danger) 10%, var(--surface)); --badge-border: color-mix(in oklab, var(--danger) 26%, var(--border)); }
 
