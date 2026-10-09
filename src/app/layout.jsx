@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { Inter, Outfit } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import Header from '@/components/Header';
 import { I18nProvider } from '@/lib/i18n';
 import { hasSessionCookie } from '@/lib/auth';
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }) {
             <main className="flex-grow max-w-4xl w-full mx-auto px-4 py-6 md:py-8 space-y-8">{children}</main>
           </div>
         </I18nProvider>
+        <Analytics />
       </body>
     </html>
   );
