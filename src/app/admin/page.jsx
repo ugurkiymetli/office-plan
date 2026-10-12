@@ -7,6 +7,16 @@ export const metadata = { title: 'Yönetim', robots: { index: false, follow: fal
 
 export default async function AdminPage() {
   const session = await getAdminSession();
-  if (!session) return <LoginForm />;
-  return <AdminApp initialPlan={await getPlan()} username={session.username} />;
+  if (!session) {
+    return (
+      <div className="mx-auto w-full max-w-4xl">
+        <LoginForm />
+      </div>
+    );
+  }
+  return (
+    <div className="mx-auto w-full max-w-4xl">
+      <AdminApp initialPlan={await getPlan()} username={session.username} />
+    </div>
+  );
 }

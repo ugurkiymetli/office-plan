@@ -73,7 +73,7 @@ export default async function RootLayout({ children }) {
         <I18nProvider initialLang={lang}>
           <div className="min-h-screen flex flex-col justify-between pb-12 bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors duration-300">
             <Header showAdmin={showAdmin} initialTheme={theme === 'dark' || theme === 'light' ? theme : null} />
-            <main className="flex-grow max-w-4xl w-full mx-auto px-4 py-6 md:py-8 space-y-8">{children}</main>
+            <main className="flex-grow w-full mx-auto px-4 py-6 md:py-8 space-y-8">{children}</main>
           </div>
         </I18nProvider>
         <Analytics />

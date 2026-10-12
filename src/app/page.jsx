@@ -8,8 +8,10 @@ export default async function HomePage() {
   const [plan, store] = await Promise.all([getPlan(), cookies()]);
   return (
     <ClientOnly>
-      <ScheduleView plan={plan} initialTeamId={store.get(PREF_COOKIES.team)?.value ?? null} />
-      <PlanFooter updatedAt={plan.updatedAt} />
+      <div className="mx-auto w-full max-w-screen-2xl space-y-8">
+        <ScheduleView plan={plan} initialTeamId={store.get(PREF_COOKIES.team)?.value ?? null} />
+        <PlanFooter updatedAt={plan.updatedAt} />
+      </div>
     </ClientOnly>
   );
 }

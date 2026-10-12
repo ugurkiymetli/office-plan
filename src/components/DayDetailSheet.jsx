@@ -1,53 +1,71 @@
 'use client';
 
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Info } from 'lucide-react';
 import { formatDate, getDayStatus } from '../lib/schedule';
 import { InfoTip, Segmented, StatusBadge, TeamBadge } from './ui';
-import { Button } from '@/components/arc/button/button';
 import { useI18n } from '../lib/i18n';
+import { Drawer, DrawerContent } from '@/components/arc/drawer/drawer';
 
 const OVERRIDE_VALUES = ['auto', 'office', 'home', 'off'];
 
-export default function DayDetailSheet({ plan, dateKey, onClose, editable = false, onSetOverride }) {
+export default function DayDetailSheet({ plan, dateKey, onClose, editable = false, onSetOverride, personalStatus, personalValue, personalReady, personalMessage, onSetPersonal }) {
   const { t } = useI18n();
+  const [desktop, setDesktop] = useState(false);
   const overrideOptions = OVERRIDE_VALUES.map((value) => ({ value, label: t(`override.${value}`) }));
 
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    const media = window.matchMedia('(min-width: 768px)');
+    const update = () => setDesktop(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   if (!dateKey) return null;
   const firstStatus = getDayStatus(plan, dateKey, plan.teams[0].id);
   const holiday = firstStatus.holiday;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
-      <button type="button" aria-label={t('common.close')} onClick={onClose} className="absolute inset-0 bg-neutral-950/40 backdrop-blur-sm" />
-      <div className="relative glass-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 pb-8 sm:pb-5 shadow-2xl animate-fade-in space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{t('day.details')}</p>
-            <h3 className="font-outfit font-bold text-xl text-neutral-900 dark:text-neutral-100">
-              {formatDate(dateKey, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </h3>
-            {holiday && (
-              <p className="mt-1 text-sm font-semibold text-amber-600 dark:text-amber-400">{holiday.name}</p>
-            )}
+  if (onSetPersonal) {
+    return (
+      <Drawer open={Boolean(dateKey)} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <DrawerContent
+          title={formatDate(dateKey, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          description={holiday?.name || t('day.details')}
+          side={desktop ? 'right' : 'bottom'}
+          style={desktop ? { '--drawer-size': 'min(42rem, calc(100vw - var(--space-6)))' } : undefined}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-medium">{t('personal.title')}</h3>
+              <StatusBadge status={personalStatus.status} />
+            </div>
+            <p className="text-sm">{t(personalStatus.source.startsWith('personal-') ? 'personal.changed' : 'personal.shared')}</p>
+            <p role="note" className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <Info size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+              <span>{t('personal.deviceNote')}</span>
+            </p>
+            {personalReady && <Segmented options={overrideOptions} value={personalValue} onChange={onSetPersonal} />}
+            {personalMessage && <p role={personalMessage.endsWith('Error') ? 'alert' : 'status'} className="text-sm">{t(personalMessage)}</p>}
+            <h3 className="text-base font-medium">{t('personal.shared')}</h3>
+            <ul className="space-y-3">
+              {plan.teams.map((team) => <li key={team.id} className="flex items-center justify-between gap-3"><TeamBadge team={team} /><StatusBadge status={getDayStatus(plan, dateKey, team.id).status} /></li>)}
+            </ul>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={onClose}
-            aria-label={t('common.close')}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
+  return (
+    <Drawer open={Boolean(dateKey)} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DrawerContent
+        title={formatDate(dateKey, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        description={holiday?.name || t('day.details')}
+        side={desktop ? 'right' : 'bottom'}
+        style={desktop ? { '--drawer-size': 'min(42rem, calc(100vw - var(--space-6)))' } : undefined}
+      >
+        <div className="space-y-4">
         <ul className="space-y-2">
           {plan.teams.map((team) => {
             const s = getDayStatus(plan, dateKey, team.id);
@@ -85,7 +103,8 @@ export default function DayDetailSheet({ plan, dateKey, onClose, editable = fals
         {editable && (
           <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('day.editHelp')}</p>
         )}
-      </div>
-    </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

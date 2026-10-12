@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, CalendarDays, ShieldCheck } from 'lucide-react';
+import { CalendarCheck, CalendarDays, Settings, ShieldCheck } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { PREF_COOKIES, setPrefCookie } from '@/lib/prefs';
 import { ThemeSwitch } from '@/components/arc/theme-switch/theme-switch';
-import { Button } from '@/components/arc/button/button';
 
 export default function Header({ showAdmin, initialTheme }) {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const pathname = usePathname();
   const [theme, setTheme] = useState(initialTheme || 'light');
 
@@ -30,7 +29,8 @@ export default function Header({ showAdmin, initialTheme }) {
 
   const tabs = [
     { href: '/', label: t('tab.schedule'), icon: CalendarDays },
-    { href: '/admin', label: t('tab.admin'), icon: ShieldCheck },
+    { href: '/settings', label: t('tab.settings'), icon: Settings },
+    ...(showAdmin ? [{ href: '/admin', label: t('tab.admin'), icon: ShieldCheck }] : []),
   ];
 
   return (
@@ -51,15 +51,15 @@ export default function Header({ showAdmin, initialTheme }) {
         </Link>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {showAdmin && (
-            <nav className="flex bg-neutral-100 dark:bg-neutral-900/60 p-1 rounded-xl border border-neutral-200 dark:border-neutral-800/80">
+            <nav aria-label={t('app.title')} className="flex bg-neutral-100 dark:bg-neutral-900/60 p-1 rounded-xl border border-neutral-200 dark:border-neutral-800/80">
               {tabs.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
                   aria-label={label}
+                  aria-current={pathname === href ? 'page' : undefined}
                   title={label}
-                  className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all ${
                     pathname === href
                       ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm'
                       : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -70,17 +70,6 @@ export default function Header({ showAdmin, initialTheme }) {
                 </Link>
               ))}
             </nav>
-          )}
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
-            aria-label={t('app.language')}
-            title={t('app.language')}
-          >
-            {lang === 'tr' ? 'EN' : 'TR'}
-          </Button>
           <ThemeSwitch
             theme={theme}
             variant="rise"
