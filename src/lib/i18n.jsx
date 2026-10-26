@@ -223,6 +223,9 @@ const en = {
   'hol.toHint': 'Leave empty for a one-day holiday. Set it to mark several days in a row, e.g. a long holiday or bridge days.',
   'hol.add': 'Add holiday',
   'hol.empty': 'No holidays added.',
+  'hol.template': 'Import 2027 holidays template',
+  'hol.templateDone': 'Added {n} holidays (half days and weekend dates skipped).',
+  'hol.templateFailed': 'Could not load template: {error}',
 
   'calc.title': 'Calendar & day changes',
   'calc.hint': "Manual changes override the rotation and holidays for one team on one day. The 'Clear' button removes all manual changes and goes back to the rotation.",
@@ -466,6 +469,9 @@ const tr = {
   'hol.toHint': 'Tek günlük tatil için boş bırakın. Art arda birkaç günü işaretlemek için doldurun, örn. bayram veya köprü günleri.',
   'hol.add': 'Tatil ekle',
   'hol.empty': 'Henüz tatil eklenmedi.',
+  'hol.template': '2027 tatil şablonunu içe aktar',
+  'hol.templateDone': '{n} tatil eklendi (yarım günler ve hafta sonu tarihleri atlandı).',
+  'hol.templateFailed': 'Şablon yüklenemedi: {error}',
 
   'calc.title': 'Takvim ve gün değişiklikleri',
   'calc.hint': "Manuel değişiklikler bir takım için bir günde rotasyonu ve tatilleri geçersiz kılar. 'Temizle' düğmesi tüm manuel değişiklikleri kaldırır ve rotasyona döner.",

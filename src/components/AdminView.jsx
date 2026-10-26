@@ -530,8 +530,42 @@ function HolidaysCard({ plan, updatePlan }) {
 
   const remove = (id) => updatePlan((p) => ({ ...p, holidays: p.holidays.filter((h) => h.id !== id) }));
 
+  const [tplMsg, setTplMsg] = useState(null);
+  const importTemplate = async () => {
+    setTplMsg(null);
+    try {
+      const res = await fetch('/2027-holidays.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+      // Full weekday holidays only: half days and weekend dates keep their normal status.
+      const items = rows
+        .filter((r) => r.durationDays >= 1 && !r.fallsOnWeekend)
+        .map((r) => {
+          const [d, m, y] = r.date.split('.');
+          const key = `${y}-${m}-${d}`;
+          return { id: uid(), name: String(r.holiday).slice(0, 80), start: key, end: key };
+        });
+      const existing = new Set(plan.holidays.map((h) => h.start));
+      const fresh = items.filter((h) => !existing.has(h.start));
+      updatePlan((p) => ({ ...p, holidays: [...p.holidays, ...fresh].sort((a, b) => a.start.localeCompare(b.start)) }));
+      setTplMsg({ ok: true, text: t('hol.templateDone', { n: fresh.length }) });
+    } catch (err) {
+      setTplMsg({ ok: false, text: t('hol.templateFailed', { error: err.message }) });
+    }
+  };
+
   return (
     <Card icon={Palmtree} title={t('hol.title')} hint={t('hol.hint')}>
+      <div className="space-y-2">
+        <Button type="button" variant="secondary" size="md" onClick={importTemplate} className="w-full">
+          <Download className="w-4 h-4" /> {t('hol.template')}
+        </Button>
+        {tplMsg && (
+          <p className={`text-xs font-semibold ${tplMsg.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {tplMsg.text}
+          </p>
+        )}
+      </div>
       <form onSubmit={add} className="space-y-3">
         <Field label={t('hol.name')} hint={t('hol.nameHint')}>
           <Input value={form.name} maxLength={80} placeholder={t('hol.namePlaceholder')} onChange={(e) => setForm({ ...form, name: e.target.value })} />

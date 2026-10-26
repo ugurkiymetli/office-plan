@@ -1,0 +1,130 @@
+[
+  {
+    "date": "01.01.2027",
+    "day": "Cuma",
+    "holiday": "Yılbaşı",
+    "type": "Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "08.03.2027",
+    "day": "Pazartesi",
+    "holiday": "Ramazan Bayramı arifesi",
+    "type": "Dini bayram",
+    "durationDays": 0.5,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "09.03.2027",
+    "day": "Salı",
+    "holiday": "Ramazan Bayramı 1. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "10.03.2027",
+    "day": "Çarşamba",
+    "holiday": "Ramazan Bayramı 2. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "11.03.2027",
+    "day": "Perşembe",
+    "holiday": "Ramazan Bayramı 3. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "23.04.2027",
+    "day": "Cuma",
+    "holiday": "Ulusal Egemenlik ve Çocuk Bayramı",
+    "type": "Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "01.05.2027",
+    "day": "Cumartesi",
+    "holiday": "Emek ve Dayanışma Günü",
+    "type": "Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": true
+  },
+  {
+    "date": "15.05.2027",
+    "day": "Cumartesi",
+    "holiday": "Kurban Bayramı arifesi",
+    "type": "Dini bayram",
+    "durationDays": 0.5,
+    "fallsOnWeekend": true
+  },
+  {
+    "date": "16.05.2027",
+    "day": "Pazar",
+    "holiday": "Kurban Bayramı 1. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": true
+  },
+  {
+    "date": "17.05.2027",
+    "day": "Pazartesi",
+    "holiday": "Kurban Bayramı 2. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "18.05.2027",
+    "day": "Salı",
+    "holiday": "Kurban Bayramı 3. gün",
+    "type": "Dini bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "19.05.2027",
+    "day": "Çarşamba",
+    "holiday": "Atatürk'ü Anma, Gençlik ve Spor Bayramı + Kurban Bayramı 4. gün",
+    "type": "Dini bayram + Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "15.07.2027",
+    "day": "Perşembe",
+    "holiday": "Demokrasi ve Milli Birlik Günü",
+    "type": "Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "30.08.2027",
+    "day": "Pazartesi",
+    "holiday": "Zafer Bayramı",
+    "type": "Genel tatil",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "28.10.2027",
+    "day": "Perşembe",
+    "holiday": "Cumhuriyet Bayramı arifesi",
+    "type": "Ulusal bayram",
+    "durationDays": 0.5,
+    "fallsOnWeekend": false
+  },
+  {
+    "date": "29.10.2027",
+    "day": "Cuma",
+    "holiday": "Cumhuriyet Bayramı",
+    "type": "Ulusal bayram",
+    "durationDays": 1,
+    "fallsOnWeekend": false
+  }
+]
