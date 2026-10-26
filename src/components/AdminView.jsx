@@ -32,6 +32,7 @@ import {
   getDayStatus,
   getLocale,
   isoWeekday,
+  isHalfStatus,
   normalizePlan,
   parseKey,
   summarizeRotation,
@@ -517,15 +518,15 @@ function RotationsCard({ plan, updatePlan }) {
 
 function HolidaysCard({ plan, updatePlan }) {
   const { t } = useI18n();
-  const [form, setForm] = useState({ name: '', start: '', end: '' });
+  const [form, setForm] = useState({ name: '', start: '', end: '', half: '' });
   const valid = form.name.trim() && form.start && (!form.end || form.end >= form.start);
 
   const add = (e) => {
     e.preventDefault();
     if (!valid) return;
-    const holiday = { id: uid(), name: form.name.trim(), start: form.start, end: form.end || form.start };
+    const holiday = { id: uid(), name: form.name.trim(), start: form.start, end: form.end || form.start, ...(form.half ? { half: form.half } : {}) };
     updatePlan((p) => ({ ...p, holidays: [...p.holidays, holiday].sort((a, b) => a.start.localeCompare(b.start)) }));
-    setForm({ name: '', start: '', end: '' });
+    setForm({ name: '', start: '', end: '', half: '' });
   };
 
   const remove = (id) => updatePlan((p) => ({ ...p, holidays: p.holidays.filter((h) => h.id !== id) }));
@@ -537,13 +538,13 @@ function HolidaysCard({ plan, updatePlan }) {
       const res = await fetch('/2027-holidays.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const rows = await res.json();
-      // Full weekday holidays only: half days and weekend dates keep their normal status.
+      // Weekend dates are skipped so they keep their normal status; half days follow the rotation.
       const items = rows
-        .filter((r) => r.durationDays >= 1 && !r.fallsOnWeekend)
+        .filter((r) => r.durationDays > 0 && !r.fallsOnWeekend)
         .map((r) => {
           const [d, m, y] = r.date.split('.');
           const key = `${y}-${m}-${d}`;
-          return { id: uid(), name: String(r.holiday).slice(0, 80), start: key, end: key };
+          return { id: uid(), name: String(r.holiday).slice(0, 80), start: key, end: key, ...(r.durationDays < 1 ? { half: 'auto' } : {}) };
         });
       const existing = new Set(plan.holidays.map((h) => h.start));
       const fresh = items.filter((h) => !existing.has(h.start));
@@ -578,6 +579,22 @@ function HolidaysCard({ plan, updatePlan }) {
             <Input type="date" value={form.end} min={form.start} onChange={(e) => setForm({ ...form, end: e.target.value })} />
           </Field>
         </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+            <Checkbox checked={Boolean(form.half)} onCheckedChange={(checked) => setForm({ ...form, half: checked ? 'auto' : '' })} />
+            {t('hol.halfDay')}
+          </label>
+          {form.half && (
+            <Field label={t('hol.otherHalf')} hint={t('hol.otherHalfHint')}>
+              <Segmented
+                size="sm"
+                options={['auto', 'office', 'home'].map((value) => ({ value, label: t(`override.${value}`) }))}
+                value={form.half}
+                onChange={(v) => setForm({ ...form, half: v })}
+              />
+            </Field>
+          )}
+        </div>
         <Button type="submit" variant="primary" size="md" disabled={!valid} className="w-full">
           <Plus className="w-4 h-4" /> {t('hol.add')}
         </Button>
@@ -590,6 +607,7 @@ function HolidaysCard({ plan, updatePlan }) {
               <p className="font-outfit font-bold text-sm truncate">{h.name}</p>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {h.start === h.end ? formatDate(h.start) : `${formatDate(h.start)} → ${formatDate(h.end)}`}
+                {h.half ? ` · ${t('hol.halfLabel', { half: t(`override.${h.half}`) })}` : ''}
               </p>
             </div>
             <Button type="button" variant="danger" size="sm" aria-label={t('common.delete')} onClick={() => remove(h.id)}>
@@ -654,7 +672,7 @@ function CalendarCard({ plan, updatePlan }) {
 
   const cellClass = (k) => {
     const statuses = plan.teams.map((tm) => getDayStatus(plan, k, tm.id).status);
-    if (statuses.every((s) => s === 'holiday' || s === 'off')) return STATUS.holiday.cell;
+    if (statuses.every((s) => s === 'holiday' || s === 'off' || isHalfStatus(s))) return STATUS.holiday.cell;
     if (statuses.every((s) => s === 'weekend')) return STATUS.weekend.cell;
     if (statuses.every((s) => s === 'none')) return STATUS.none.cell;
     return 'bg-neutral-100/80 text-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-200';

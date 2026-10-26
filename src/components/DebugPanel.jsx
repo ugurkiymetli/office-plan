@@ -67,7 +67,7 @@ export default function DebugPanel({
           return;
         }
       } else if (targetStatus === 'holiday') {
-        if (st === 'holiday' || st === 'off') {
+        if (st === 'holiday' || st === 'off' || st.startsWith('half-')) {
           onSetDebugDate(k);
           return;
         }

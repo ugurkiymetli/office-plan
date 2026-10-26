@@ -30,6 +30,8 @@ export const STATUS = {
   office: { cell: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
   home: { cell: 'bg-blue-500/10 text-blue-700 dark:text-blue-300', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
   holiday: { cell: 'bg-amber-500/15 text-amber-700 dark:text-amber-300', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'half-office': { cell: 'bg-amber-500/15 text-amber-700 dark:text-amber-300', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'half-home': { cell: 'bg-amber-500/15 text-amber-700 dark:text-amber-300', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   off: { cell: 'bg-amber-500/15 text-amber-700 dark:text-amber-300', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   weekend: { cell: 'text-neutral-400 dark:text-neutral-600', badge: 'bg-neutral-500/10 text-neutral-500 dark:text-neutral-400 border-neutral-500/20' },
   none: { cell: 'text-neutral-500 dark:text-neutral-400', badge: 'bg-neutral-500/10 text-neutral-500 dark:text-neutral-400 border-neutral-500/20' },
@@ -154,12 +156,24 @@ function findRotation(plan, key) {
   return null;
 }
 
+export function isHalfStatus(status) {
+  return typeof status === 'string' && status.startsWith('half-');
+}
+
 export function getDayStatus(plan, key, teamId) {
   const override = plan.overrides[key]?.[teamId];
   const holiday = findHoliday(plan, key);
   if (override) return { status: override, source: 'override', holiday };
+  if (holiday?.half) {
+    // 'auto' keeps the working half where the rotation would put the team.
+    const half = holiday.half === 'auto' ? (getRotationStatus(plan, key, teamId).status === 'office' ? 'office' : 'home') : holiday.half;
+    return { status: `half-${half}`, source: 'holiday', holiday };
+  }
   if (holiday) return { status: 'holiday', source: 'holiday', holiday };
+  return getRotationStatus(plan, key, teamId);
+}
 
+function getRotationStatus(plan, key, teamId) {
   const wd = isoWeekday(key);
   const rotation = findRotation(plan, key);
   if (rotation) {
@@ -197,7 +211,7 @@ export function createDefaultPlan() {
   };
 }
 
-const VALID_OVERRIDES = ['office', 'home', 'off'];
+const VALID_OVERRIDES = ['office', 'home', 'off', 'half-office', 'half-home'];
 
 function toDayList(v) {
   return Array.isArray(v) ? [...new Set(v.map(Number).filter((n) => n >= 1 && n <= 7))].sort() : [];
@@ -232,7 +246,13 @@ export function normalizePlan(raw) {
 
   const holidays = (Array.isArray(raw.holidays) ? raw.holidays : [])
     .filter((h) => h && isValidKey(h.start) && (!h.end || (isValidKey(h.end) && h.end >= h.start)))
-    .map((h) => ({ id: String(h.id || uid()), name: String(h.name || 'Holiday').slice(0, 80), start: h.start, end: h.end || h.start }))
+    .map((h) => ({
+      id: String(h.id || uid()),
+      name: String(h.name || 'Holiday').slice(0, 80),
+      start: h.start,
+      end: h.end || h.start,
+      ...(['auto', 'office', 'home'].includes(h.half) ? { half: h.half } : {}),
+    }))
     .sort((a, b) => a.start.localeCompare(b.start));
 
   const overrides = {};

@@ -58,6 +58,8 @@ const en = {
   'status.home': 'Home',
   'status.holiday': 'Holiday',
   'status.off': 'Day off',
+  'status.half-office': 'Half day · office',
+  'status.half-home': 'Half day · home',
   'status.weekend': 'Weekend',
   'status.none': 'Not planned',
 
@@ -65,6 +67,8 @@ const en = {
   'hero.home': 'Working from home',
   'hero.holiday': 'Holiday',
   'hero.off': 'Day off',
+  'hero.half-office': 'Half day off, office for the rest',
+  'hero.half-home': 'Half day off, home for the rest',
   'hero.weekend': 'Weekend',
   'hero.none': 'No plan yet',
 
@@ -78,6 +82,14 @@ const en = {
   'override.office': 'Office',
   'override.home': 'Home',
   'override.off': 'Off',
+  'override.half-office': 'Office',
+  'override.half-home': 'Home',
+  'day.halfDay': 'This day is a half day',
+  'day.otherHalfHelp': 'Half the day is off. Pick where the other half is worked.',
+  'hol.halfDay': 'Half-day holiday',
+  'hol.otherHalf': 'Other half',
+  'hol.otherHalfHint': "Where the team works the rest of the day. 'Auto' follows the rotation.",
+  'hol.halfLabel': 'half day ({half})',
 
   'schedule.selectTeam': 'Select your team',
   'schedule.selectTeamText': 'Choose your team to see your office and home days. Your choice is saved on this device.',
@@ -224,7 +236,7 @@ const en = {
   'hol.add': 'Add holiday',
   'hol.empty': 'No holidays added.',
   'hol.template': 'Import 2027 holidays template',
-  'hol.templateDone': 'Added {n} holidays (half days and weekend dates skipped).',
+  'hol.templateDone': 'Added {n} holidays (weekend dates skipped).',
   'hol.templateFailed': 'Could not load template: {error}',
 
   'calc.title': 'Calendar & day changes',
@@ -303,6 +315,8 @@ const tr = {
   'status.home': 'Ev',
   'status.holiday': 'Tatil',
   'status.off': 'İzin',
+  'status.half-office': 'Yarım gün · ofis',
+  'status.half-home': 'Yarım gün · ev',
   'status.weekend': 'Hafta sonu',
   'status.none': 'Planlanmadı',
 
@@ -310,6 +324,8 @@ const tr = {
   'hero.home': 'Evden çalışıyorsunuz',
   'hero.holiday': 'Tatil',
   'hero.off': 'İzinlisiniz',
+  'hero.half-office': 'Yarım gün izin, kalan yarım gün ofis',
+  'hero.half-home': 'Yarım gün izin, kalan yarım gün ev',
   'hero.weekend': 'Hafta sonu',
   'hero.none': 'Henüz plan yok',
 
@@ -323,6 +339,14 @@ const tr = {
   'override.office': 'Ofis',
   'override.home': 'Ev',
   'override.off': 'İzin',
+  'override.half-office': 'Ofis',
+  'override.half-home': 'Ev',
+  'day.halfDay': 'Bu gün yarım gün',
+  'day.otherHalfHelp': 'Günün yarısı izinli. Kalan yarım günün nerede çalışılacağını seçin.',
+  'hol.halfDay': 'Yarım gün tatil',
+  'hol.otherHalf': 'Kalan yarım gün',
+  'hol.otherHalfHint': "Takım günün kalanını nerede çalışır. 'Otomatik' rotasyonu izler.",
+  'hol.halfLabel': 'yarım gün ({half})',
 
   'schedule.selectTeam': 'Takımınızı seçin',
   'schedule.selectTeamText': 'Ofis ve ev günlerinizi görmek için takımınızı seçin. Seçiminiz bu cihazda saklanır.',
@@ -470,7 +494,7 @@ const tr = {
   'hol.add': 'Tatil ekle',
   'hol.empty': 'Henüz tatil eklenmedi.',
   'hol.template': '2027 tatil şablonunu içe aktar',
-  'hol.templateDone': '{n} tatil eklendi (yarım günler ve hafta sonu tarihleri atlandı).',
+  'hol.templateDone': '{n} tatil eklendi (hafta sonu tarihleri atlandı).',
   'hol.templateFailed': 'Şablon yüklenemedi: {error}',
 
   'calc.title': 'Takvim ve gün değişiklikleri',

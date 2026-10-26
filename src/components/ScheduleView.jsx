@@ -33,6 +33,8 @@ const HERO_STYLE = {
   office: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300',
   home: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300',
   holiday: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
+  'half-office': 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
+  'half-home': 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
   off: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
   weekend: 'bg-neutral-100 border-neutral-200 text-neutral-700 dark:bg-neutral-800/60 dark:border-neutral-800 dark:text-neutral-300',
   none: 'bg-neutral-100 border-neutral-200 text-neutral-700 dark:bg-neutral-800/60 dark:border-neutral-800 dark:text-neutral-300',
@@ -117,13 +119,13 @@ export default function ScheduleView({ plan, initialTeamId }) {
   const nextOffice = (() => {
     for (let i = 1; i <= 120; i++) {
       const k = addDays(heroDateKey, i);
-      if (myStatus(k).status === 'office') return k;
+      if (['office', 'half-office'].includes(myStatus(k).status)) return k;
     }
     return null;
   })();
 
-  const showOtherTeam = heroOtherStatus.status === 'office' || heroOtherStatus.status === 'home';
-  const showNextOffice = Boolean(nextOffice && heroStatus.status !== 'office');
+  const showOtherTeam = ['office', 'home', 'half-office', 'half-home'].includes(heroOtherStatus.status);
+  const showNextOffice = Boolean(nextOffice && !['office', 'half-office'].includes(heroStatus.status));
 
   const monthPrefix = `${month.year}-${String(month.month + 1).padStart(2, '0')}`;
   const monthCounts = { office: 0, home: 0, holiday: 0 };
@@ -131,6 +133,8 @@ export default function ScheduleView({ plan, initialTeamId }) {
   for (let d = 1; d <= daysInMonth; d++) {
     const s = myStatus(`${monthPrefix}-${String(d).padStart(2, '0')}`).status;
     if (s === 'off') monthCounts.holiday++;
+    else if (s === 'half-office') monthCounts.office++;
+    else if (s === 'half-home') monthCounts.home++;
     else if (s in monthCounts) monthCounts[s]++;
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, House, Palmtree, CalendarOff, Moon, CircleDashed, Info } from 'lucide-react';
+import { Building2, House, Palmtree, CalendarOff, Moon, CircleDashed, Info, SunMoon } from 'lucide-react';
 import { STATUS, TEAM_COLORS, formatDate, toZonedKey, weekdayName } from '../lib/schedule';
 import { useI18n } from '../lib/i18n';
 import { Badge } from '@/components/arc/badge/badge';
@@ -13,6 +13,8 @@ export const STATUS_ICONS = {
   office: Building2,
   home: House,
   holiday: Palmtree,
+  'half-office': SunMoon,
+  'half-home': SunMoon,
   off: CalendarOff,
   weekend: Moon,
   none: CircleDashed,
@@ -143,6 +145,8 @@ export function StatusBadge({ status, className = '' }) {
     office: 'success',
     home: 'info',
     holiday: 'warning',
+    'half-office': 'warning',
+    'half-home': 'warning',
     off: 'neutral',
     weekend: 'neutral',
     none: 'neutral',
